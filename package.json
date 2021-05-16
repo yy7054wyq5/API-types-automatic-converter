@@ -4,6 +4,8 @@
   "description": "Automatic convert request params and response body of API",
   "main": "index.js",
   "scripts": {
+    "flow": "flow",
+    "build": "babel src/ -d lib/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -32,6 +34,10 @@
     "typescript-json-schema": "^0.50.0"
   },
   "devDependencies": {
+    "@babel/cli": "^7.13.16",
+    "@babel/core": "^7.14.2",
+    "@babel/preset-flow": "^7.13.13",
+    "flow-bin": "^0.151.0",
     "prettier": "^2.3.0",
     "standard-version": "^9.3.0"
   }
