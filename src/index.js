@@ -1,10 +1,9 @@
-// @flow
-import { log, LogColors } from './log';
+const { log, LogColors } = require('./log');
 
 // @flow
 function add(n: number): number {
-	log(n, LogColors.bright);
-	return n;
+  log(n, LogColors.red);
+  return n;
 }
 
 add(1111);

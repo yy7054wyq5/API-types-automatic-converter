@@ -14,9 +14,14 @@ module.exports = {
 		sourceType: 'module',
 	},
 	rules: {
-		'indent': ['error', 'tab'],
+		'indent': ['error', 'space'],
 		'linebreak-style': ['error', 'unix'],
 		'quotes': ['error', 'single'],
 		'semi': ['error', 'always'],
+	},
+	settings: {
+		flowtype: {
+			onlyFilesWithFlowAnnotation: true,
+		},
 	},
 };
