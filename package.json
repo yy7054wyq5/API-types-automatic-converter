@@ -1,0 +1,38 @@
+{
+  "name": "api-types-automatic-converter",
+  "version": "0.0.1",
+  "description": "Automatic convert request params and response body of API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yy7054wyq5/API-types-automatic-converter.git"
+  },
+  "keywords": [
+    "API",
+    "typescript",
+    "converter",
+    "automatic"
+  ],
+  "author": "wuyang(349413799@qq.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yy7054wyq5/API-types-automatic-converter/issues"
+  },
+  "homepage": "https://github.com/yy7054wyq5/API-types-automatic-converter#readme",
+  "dependencies": {
+    "body": "^5.1.0",
+    "express": "^4.17.1",
+    "http-proxy-middleware": "^2.0.0",
+    "http-status-codes": "^2.1.4",
+    "json-server": "^0.16.3",
+    "node-http-proxy-json": "^0.1.9",
+    "typescript-json-schema": "^0.50.0"
+  },
+  "devDependencies": {
+    "prettier": "^2.3.0",
+    "standard-version": "^9.3.0"
+  }
+}
