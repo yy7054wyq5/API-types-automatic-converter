@@ -1,4 +1,10 @@
 // @flow
+import { log, LogColors } from './log';
+
+// @flow
 function add(n: number): number {
-  return n;
+	log(n, LogColors.bright);
+	return n;
 }
+
+add(1111);
