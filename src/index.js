@@ -1,7 +1,7 @@
 // @flow
 const express = require('express');
 const parsingBody = require('body/any');
-const proxy = require('http-proxy-middleware');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 const modifyResponse = require('node-http-proxy-json');
 const child_process = require('child_process');
 const fs = require('fs');
@@ -13,10 +13,12 @@ const { json2Interface } = require('./json-2-interface');
 const { saveJSON } = require('./save-json');
 const { saveType } = require('./save-type');
 const { ts2jsonschema } = require('./ts-2-jsonschema');
+const { saveReqParams } = require('./save-req-params');
 
-const typeFileSavePath = './src/app/api-types';
-const jsonFileSavePath = './src/assets/api-json';
-const proxyApiUrl = 'https://beiming.test.haochang.tv/api';
+const typeFileSavePath = './result/api-types';
+const jsonFileSavePath = './result/api-json';
+// const proxyApiUrl = 'https://beiming.test.haochang.tv/api';
+const proxyApiUrl = 'https://jsonplaceholder.typicode.com';
 const ApiTypeFileNameSuffix = {
 	resbody: {
 		json: 'resbody.json',
@@ -53,19 +55,6 @@ function step(req): {
 	};
 }
 
-function saveReqParams(params: Object, typeFileSavePathHead: string, interfacePrefixName: string) {
-	// 保存res params interface
-	if (params && Object.keys(params).length) {
-		const reqparamsTypeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.reqparams.interface}`;
-		const reqparamsTypeName = interfacePrefixName + 'ReqparamsI';
-		saveType({
-			filePath: reqparamsTypeFilePath,
-			name: reqparamsTypeName,
-			sourceStr: json2Interface(params, reqparamsTypeName),
-		});
-	}
-}
-
 const PROXY_CONFIG = {
 	target: proxyApiUrl,
 	pathRewrite: {
@@ -79,7 +68,7 @@ const PROXY_CONFIG = {
 		const { typeFileSavePathHead, interfacePrefixName } = step(req);
 		if (method === 'GET') {
 			const params = getQueryParamsFromUrl(url);
-			saveReqParams(params, typeFileSavePathHead, interfacePrefixName);
+			saveReqParams(params, `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.reqparams.interface}`, interfacePrefixName);
 			return;
 		}
 
@@ -163,7 +152,7 @@ const PROXY_CONFIG = {
 };
 
 const app = express();
-const apiProxy = proxy(PROXY_CONFIG);
+const apiProxy = createProxyMiddleware(PROXY_CONFIG);
 app.use(function (req, res, next) {
 	// console.log('\n\nHeaders');
 	// console.log(req.headers);

@@ -14,7 +14,7 @@ function saveType(options: { name: string, filePath: string, sourceStr: string }
 	return new Promise((resolve, reject) => {
 		fs.readFile(filePath, {}, (err, data) => {
 			const interfaceStr = sourceStr;
-			let diff = differ(data.toString(), interfaceStr);
+			let diff = data && differ(data.toString(), interfaceStr);
 			if (err || !data || diff) {
 				logSuccess(`save ${filePath} end`);
 				console.log(interfaceStr);
