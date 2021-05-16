@@ -6,7 +6,7 @@
 	"scripts": {
 		"flow": "flow",
 		"client": "npx serve ./sample",
-		"start": "babel src/ -d lib/ && node ./lib/index.js",
+		"start": "npm run flow && babel src/ -d lib/ && node ./lib/index.js",
 		"build": "babel src/ -d lib/",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},

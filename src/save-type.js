@@ -5,7 +5,7 @@ const child_process = require('child_process');
 const { logSuccess, logError } = require('./log');
 const { differ } = require('./differ');
 
-function saveType(options: { name: string, filePath: string, sourceStr: string }) {
+function saveType(options: { name: string, filePath: string, sourceStr: string }): Promise<void> {
 	const { filePath, name, sourceStr } = options;
 	logSuccess(`save ${filePath} start`);
 	if (!sourceStr) {
