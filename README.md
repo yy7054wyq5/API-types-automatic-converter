@@ -1,6 +1,6 @@
 # API-types-automatic-converter
 
-Automatic convert request params and response body of API
+Automatic convert request params and response body of API. Use [flow](https://flow.org/en/).
 
 ## vscode extension
 
@@ -8,4 +8,7 @@ Automatic convert request params and response body of API
 
 ## TODO
 
-    1. []
+    1. []分离函数，声明类型
+    2. []支持传入配置
+    3. []对接json-server
+    4. []样例
