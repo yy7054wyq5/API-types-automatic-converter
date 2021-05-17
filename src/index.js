@@ -12,8 +12,8 @@ const { firstUpperCase, line2Hump, getQueryParamsFromUrl } = require('./utils');
 const { json2Interface, ts2jsonschema } = require('./converter');
 const { saveJSON, saveReqParams, saveType } = require('./save');
 
-const typeFileSavePath = './result/api-types';
-const jsonFileSavePath = './result/api-json';
+const typeFileSavePath = './sample/result/api-types';
+const jsonFileSavePath = './sample/result/api-json';
 const proxyApiUrl = 'https://jsonplaceholder.typicode.com';
 const ApiTypeFileNameSuffix = {
 	resbody: {

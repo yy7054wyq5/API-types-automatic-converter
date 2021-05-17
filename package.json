@@ -8,7 +8,8 @@
 		"client": "npx serve ./sample",
 		"start": "npm run flow && babel src/ -d lib/ && node ./lib/index.js",
 		"build": "babel src/ -d lib/",
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"bin": "./lib/index.js"
 	},
 	"repository": {
 		"type": "git",

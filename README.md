@@ -8,7 +8,7 @@ Automatic convert request params and response body of API. Use [flow](https://fl
 
 ## TODO
 
-    1. []分离函数，声明类型
+    1. [x]分离函数，声明类型
     2. []支持传入配置
     3. []对接json-server
     4. []样例
