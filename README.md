@@ -4,7 +4,7 @@ Automatic convert request params and response body of API. Use [flow](https://fl
 
 ## vscode extension
 
-    vscode-flow-ide: An alternative Flowtype extension for Visual Studio Code. Flowtype is a static type checker ment to find errors in Javascript programs.
+vscode-flow-ide: An alternative Flowtype extension for Visual Studio Code. Flowtype is a static type checker ment to find errors in Javascript programs.
 
 ## TODO
 
