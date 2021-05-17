@@ -1,3 +1,5 @@
+// @flow
+
 // https://blog.csdn.net/guang_s/article/details/90380581
 const LogColors = {
 	bright: '\x1B[1m', // 亮色
@@ -24,7 +26,6 @@ const LogColors = {
 	whiteBG: '\x1B[47m', // 背景色为白色
 };
 
-// @flow
 function log(msg: string | Object, color: string): void {
 	if (typeof msg === 'object' && Object.keys(msg).length) {
 		try {
@@ -36,13 +37,11 @@ function log(msg: string | Object, color: string): void {
 	console.log(`${color}${msg}\x1B[0m`);
 }
 
-// @flow
 function logSuccess(msg: string | Object): void {
 	log(msg, LogColors.yellow);
 }
 
-// @flow
-function logError(msg: Number) {
+function logError(msg: string | Object) {
 	log(msg, LogColors.red);
 }
 

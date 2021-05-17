@@ -9,15 +9,11 @@ const { StatusCodes } = require('http-status-codes');
 
 const { log, LogColors, logSuccess, logError } = require('./log');
 const { firstUpperCase, line2Hump, getQueryParamsFromUrl } = require('./utils');
-const { json2Interface } = require('./json-2-interface');
-const { saveJSON } = require('./save-json');
-const { saveType } = require('./save-type');
-const { ts2jsonschema } = require('./ts-2-jsonschema');
-const { saveReqParams } = require('./save-req-params');
+const { json2Interface, ts2jsonschema } = require('./converter');
+const { saveJSON, saveReqParams, saveType } = require('./save');
 
 const typeFileSavePath = './result/api-types';
 const jsonFileSavePath = './result/api-json';
-// const proxyApiUrl = 'https://beiming.test.haochang.tv/api';
 const proxyApiUrl = 'https://jsonplaceholder.typicode.com';
 const ApiTypeFileNameSuffix = {
 	resbody: {

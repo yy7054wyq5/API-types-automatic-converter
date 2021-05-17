@@ -1,9 +1,28 @@
 // @flow
 
+const json2ts = require('json-to-ts');
 const ts2schema = require('typescript-json-schema');
-const { saveJSON } = require('./save-json');
 const path = require('path');
 const resolve = path.resolve;
+const { logError } = require('./log');
+const { saveJSON } = require('./save');
+
+function putInterfaceName(sourceStr: string, interfaceName: string): string {
+	let editedStr = sourceStr;
+	editedStr = editedStr.replace(/ any/g, 'unknown');
+	return editedStr.replace(/interface RootObject/, `export interface ${interfaceName}`); // 重写接口
+}
+
+function json2Interface(data: Object, interfaceName: string): string {
+	try {
+		const str = json2ts.default(data).toString().replace(/,/g, ' ');
+		return putInterfaceName(str, interfaceName);
+	} catch (error) {
+		logError('json2Interface.js json2Interface error');
+		logError(error);
+		return '';
+	}
+}
 
 function ts2jsonschema(options: { filePath: string, tsTypeName: string, fileName: string, jsonschemaFilePath: string }): void {
 	const { filePath, fileName, tsTypeName, jsonschemaFilePath } = options;
@@ -26,5 +45,6 @@ function ts2jsonschema(options: { filePath: string, tsTypeName: string, fileName
 }
 
 module.exports = {
+	json2Interface,
 	ts2jsonschema,
 };

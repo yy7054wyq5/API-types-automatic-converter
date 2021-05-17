@@ -6,16 +6,15 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>sample</title>
 		<script>
-			function doSth() {
-				fetch('http://localhost:5400/todos/1').then((res) => {
+			function doSth(n) {
+				fetch(`http://localhost:5400/todos/${n}`).then((res) => {
 					console.log(res);
 				});
 			}
-
-			doSth();
+			doSth(1);
 		</script>
 	</head>
 	<body>
-		<button onclick="doSth()">请求</button>
+		<button onclick="doSth(parseInt(Math.random() * 10))">请求</button>
 	</body>
 </html>
