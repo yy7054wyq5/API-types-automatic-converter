@@ -9,7 +9,9 @@
 		"start": "npm run flow && babel src/ -d lib/ && node ./lib/index.js",
 		"build": "babel src/ -d lib/",
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"bin": "./lib/index.js"
+		"bin": {
+			"API-convert": "./lib/index.js"
+		}
 	},
 	"repository": {
 		"type": "git",
@@ -49,5 +51,5 @@
 		"prettier": "^2.3.0",
 		"standard-version": "^9.3.0"
 	},
-	"type": "commonjs"
+	"type": "module"
 }

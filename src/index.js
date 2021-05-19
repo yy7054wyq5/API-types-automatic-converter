@@ -11,11 +11,11 @@ const { log, LogColors, logSuccess, logError } = require('./log');
 const { firstUpperCase, line2Hump, getQueryParamsFromUrl } = require('./utils');
 const { json2Interface, ts2jsonschema } = require('./converter');
 const { saveJSON, saveReqParams, saveType } = require('./save');
-
+const { filePath } = require('./init');
 const commander = require('commander');
 
-const typeFileSavePath = './sample/result/api-types';
-const jsonFileSavePath = './sample/result/api-json';
+const typeFileSavePath = `${filePath}/api-types`;
+const jsonFileSavePath = `${filePath}/api-json`;
 const proxyApiUrl = 'https://jsonplaceholder.typicode.com';
 const ApiTypeFileNameSuffix = {
 	resbody: {
@@ -26,15 +26,6 @@ const ApiTypeFileNameSuffix = {
 	reqparams: {
 		interface: 'reqparams.interface.ts',
 	},
-};
-
-// TODO:
-const config = {
-	filePath: {
-		type: '',
-		json: '',
-	},
-	ApiTypeFileNameSuffix,
 };
 
 function step(req): {
