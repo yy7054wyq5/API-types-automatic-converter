@@ -5,6 +5,7 @@ import * as fs from 'fs';
 // 14.16.1 可以不写 --experimental-modules
 
 const filePath = './convert-result';
+const configPath = './convert-config.js';
 
 function init() {
 	const configContent = `module.exports = {
@@ -23,7 +24,7 @@ function init() {
 
 	fs.readdir(filePath, (err, files) => {
 		if (err) {
-			fs.writeFile('./convert-config.js', configContent, () => {});
+			fs.writeFile(configPath, configContent, () => {});
 			fs.mkdir(filePath, () => {
 				fs.mkdir(`${filePath}/api-types`, () => {});
 				fs.mkdir(`${filePath}/api-json`, () => {});
@@ -34,4 +35,4 @@ function init() {
 
 init();
 
-export { filePath, init };
+export { filePath, init, configPath };

@@ -11,24 +11,13 @@ const { log, LogColors, logSuccess, logError } = require('./log');
 const { firstUpperCase, line2Hump, getQueryParamsFromUrl } = require('./utils');
 const { json2Interface, ts2jsonschema } = require('./converter');
 const { saveJSON, saveReqParams, saveType } = require('./save');
-const { filePath } = require('./init');
-const commander = require('commander');
+const { init, filePath, configPath } = require('./init');
+const program = require('commander');
 
-const typeFileSavePath = `${filePath}/api-types`;
-const jsonFileSavePath = `${filePath}/api-json`;
-const proxyApiUrl = 'https://jsonplaceholder.typicode.com';
-const ApiTypeFileNameSuffix = {
-	resbody: {
-		json: 'resbody.json',
-		interface: 'resbody.interface.ts',
-		jsonschema: 'resbody.jsonschema.json',
-	},
-	reqparams: {
-		interface: 'reqparams.interface.ts',
-	},
-};
-
-function step(req): {
+function step(
+	req: Object,
+	typeFileSavePath: string
+): {
 	fileName: string,
 	interfacePrefixName: string,
 	typeFileSavePathHead: string,
@@ -53,115 +42,147 @@ function step(req): {
 	};
 }
 
-const PROXY_CONFIG = {
-	target: proxyApiUrl,
-	pathRewrite: {
-		'^/api': '',
-	},
-	changeOrigin: true,
-	secure: false,
-	onProxyReq: (proxyReq, req, res) => {
-		logSuccess('api-types-creater-serve.js onProxyReq');
-		let { url, method } = req;
-		const { typeFileSavePathHead, interfacePrefixName } = step(req);
-		if (method === 'GET') {
-			const params = getQueryParamsFromUrl(url);
-			saveReqParams(params, `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.reqparams.interface}`, interfacePrefixName);
-			return;
-		}
+program
+	.command('init')
+	.description('初始配置')
+	.action(() => init());
 
-		// 忽略
-		const contentType = req.headers['content-type'];
-		if (contentType && contentType.indexOf('multipart/form-data') > -1) {
-			logSuccess('onProxyReq handle req body ignore multipart/form-data');
-			return;
-		}
+program
+	.command('start')
+	.description('转换器启动')
+	.action(() => {
+		const config = JSON.parse(fs.readFileSync(configPath).toString());
+		const { proxyApiUrl, differ, enable, ignore } = config;
+		const { jsonSchema: enableJsonSchema, json: enableJson } = enable;
+		const { methods: ignoreMethods, reqContentTypes: ignoreReqContentTypes, resContentTypes: ignoreResContentTypes } = ignore;
+		const typeFileSavePath = `${filePath}/api-types`;
+		const jsonFileSavePath = `${filePath}/api-json`;
+		const ApiTypeFileNameSuffix = {
+			resbody: {
+				json: 'resbody.json',
+				interface: 'resbody.interface.ts',
+				jsonschema: 'resbody.jsonschema.json',
+			},
+			reqparams: {
+				interface: 'reqparams.interface.ts',
+			},
+		};
 
-		parsingBody(req, res, function (err, body) {
-			if (err) {
-				logError('onProxyReq handle req body err');
-				logError(err);
-				return;
-			}
-			saveReqParams(body, typeFileSavePathHead, interfacePrefixName);
-		});
-	},
-	onProxyRes: (proxyRes, req, res) => {
-		// modify some information
-		// body.age = 2;
-		// delete body.version;
+		const PROXY_CONFIG = {
+			target: proxyApiUrl,
+			pathRewrite: {
+				'^/api': '',
+			},
+			changeOrigin: true,
+			secure: false,
+			onProxyReq: (proxyReq, req, res) => {
+				logSuccess('api-types-creater-serve.js onProxyReq');
+				let { url, method } = req;
+				const { typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
 
-		logSuccess('api-types-creater-serve.js onProxyRes');
-		console.log('req.url', req.url);
-		console.log('req.method', req.method);
-		console.log('req.originalUrl', req.originalUrl);
-		console.log('req.params', req.params);
-
-		if (req.url.indexOf('.xlsx') > -1) {
-			return;
-		}
-
-		modifyResponse(res, proxyRes, function (body) {
-			let { url, method } = req;
-
-			if (!url || !method) {
-				logError(`${url}: 接口返回无效`);
-				return body;
-			}
-
-			const { fileName, typeFileSavePathHead, interfacePrefixName } = step(req);
-			const resbodyJsonFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.json}`;
-
-			// 保存res body interface
-			if (body && Object.keys(body).length) {
-				const resbodyTypeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.resbody.interface}`;
-				const resbodyTypeName = interfacePrefixName + 'ResbodyI';
-				saveType({
-					filePath: resbodyTypeFilePath,
-					name: resbodyTypeName,
-					sourceStr: json2Interface(body, resbodyTypeName),
-				}).then(() => {
-					// 保存data
-					saveJSON(resbodyJsonFilePath, JSON.stringify(body));
-					// 将interface转jsonschema
-					ts2jsonschema({
-						fileName,
-						filePath: resbodyTypeFilePath,
-						tsTypeName: resbodyTypeName,
-						jsonschemaFilePath: `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`,
-					});
-				});
-			}
-
-			// mock
-			if (req.headers['mock-response']) {
-				res.statusCode = StatusCodes.OK;
-				try {
-					return JSON.parse(fs.readFileSync(resbodyJsonFilePath).toString());
-				} catch (error) {
-					console.log(error);
-					return body;
+				if (ignoreMethods.includes(method.toLowerCase())) {
+					return;
 				}
-			}
+				if (ignoreReqContentTypes.includes(req.headers['content-type'])) {
+					return;
+				}
 
-			return body; // return value can be a promise
+				if (method === 'GET') {
+					const params = getQueryParamsFromUrl(url);
+					saveReqParams(params, `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.reqparams.interface}`, interfacePrefixName);
+					return;
+				}
+
+				parsingBody(req, res, function (err, body) {
+					if (err) {
+						logError('onProxyReq handle req body err');
+						logError(err);
+						return;
+					}
+					saveReqParams(body, typeFileSavePathHead, interfacePrefixName);
+				});
+			},
+			onProxyRes: (proxyRes, req, res) => {
+				// modify some information
+				// body.age = 2;
+				// delete body.version;
+
+				logSuccess('api-types-creater-serve.js onProxyRes');
+				console.log('req.url', req.url);
+				console.log('req.method', req.method);
+				console.log('req.originalUrl', req.originalUrl);
+				console.log('req.params', req.params);
+
+				if (ignoreResContentTypes.includes(req.headers['content-type'])) {
+					return;
+				}
+
+				modifyResponse(res, proxyRes, function (body) {
+					let { url, method } = req;
+
+					if (!url || !method) {
+						logError(`${url}: 接口返回无效`);
+						return body;
+					}
+
+					const { fileName, typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
+					const resbodyJsonFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.json}`;
+
+					// 保存res body interface
+					if (body && Object.keys(body).length) {
+						const resbodyTypeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.resbody.interface}`;
+						const resbodyTypeName = interfacePrefixName + 'ResbodyI';
+						saveType({
+							filePath: resbodyTypeFilePath,
+							name: resbodyTypeName,
+							sourceStr: json2Interface(body, resbodyTypeName),
+							differ,
+						}).then(() => {
+							if (enableJson) {
+								// 保存data
+								saveJSON(resbodyJsonFilePath, JSON.stringify(body));
+							}
+							if (enableJsonSchema) {
+								// 将interface转jsonschema
+								ts2jsonschema({
+									fileName,
+									filePath: resbodyTypeFilePath,
+									tsTypeName: resbodyTypeName,
+									jsonschemaFilePath: `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`,
+								});
+							}
+						});
+					}
+
+					// mock
+					if (req.headers['mock-response']) {
+						res.statusCode = StatusCodes.OK;
+						try {
+							return JSON.parse(fs.readFileSync(resbodyJsonFilePath).toString());
+						} catch (error) {
+							console.log(error);
+							return body;
+						}
+					}
+
+					return body; // return value can be a promise
+				});
+			},
+		};
+
+		const app = express();
+		const apiProxy = createProxyMiddleware(PROXY_CONFIG);
+		app.use(function (req, res, next) {
+			// console.log('\n\nHeaders');
+			// console.log(req.headers);
+
+			// console.log('\nQuery');
+			// console.log(req.query);
+
+			// console.log('\nBody');
+			// console.log(req.body);
+			next();
 		});
-	},
-};
-
-const app = express();
-const apiProxy = createProxyMiddleware(PROXY_CONFIG);
-app.use(function (req, res, next) {
-	// console.log('\n\nHeaders');
-	// console.log(req.headers);
-
-	// console.log('\nQuery');
-	// console.log(req.query);
-
-	// console.log('\nBody');
-	// console.log(req.body);
-	next();
-});
-
-app.use(apiProxy);
-app.listen(5400);
+		app.use(apiProxy);
+		app.listen(5400);
+	});
