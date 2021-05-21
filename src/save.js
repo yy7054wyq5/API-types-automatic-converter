@@ -3,6 +3,7 @@
 const { json2Interface } = require('./converter');
 const { logError, logSuccess } = require('./log');
 const { differ } = require('./differ');
+const innerDiffer = differ;
 const fs = require('fs');
 const child_process = require('child_process');
 
@@ -26,8 +27,8 @@ function saveJSON(filePath: string, content: string) {
 	});
 }
 
-function saveType(options: { name: string, filePath: string, sourceStr: string }): Promise<void> {
-	const { filePath, name, sourceStr } = options;
+function saveType(options: { name: string, filePath: string, sourceStr: string, differ?: (pre: string, current: string) => boolean }): Promise<void> {
+	const { filePath, name, sourceStr, differ } = options;
 	logSuccess(`save ${filePath} start`);
 	if (!sourceStr) {
 		return Promise.reject();
@@ -35,7 +36,7 @@ function saveType(options: { name: string, filePath: string, sourceStr: string }
 	return new Promise((resolve, reject) => {
 		fs.readFile(filePath, {}, (err, data) => {
 			const interfaceStr = sourceStr;
-			let diff = data && differ(data.toString(), interfaceStr);
+			let diff = data && (differ ? differ(data.toString(), interfaceStr) : innerDiffer(data.toString(), interfaceStr));
 			if (err || !data || diff) {
 				logSuccess(`save ${filePath} end`);
 				// console.log(interfaceStr);
