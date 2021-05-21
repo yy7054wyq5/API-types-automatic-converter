@@ -6,7 +6,8 @@
 	"scripts": {
 		"flow": "flow",
 		"client": "npx serve ./sample",
-		"start": "npm run flow && babel src/ -d lib/ && node --experimental-modules ./lib/index.js",
+		"init": "npm run flow && babel src/ -d lib/ && node ./lib/init.js",
+		"start": "npm run flow && babel src/ -d lib/ && node ./lib/index.js",
 		"build": "babel src/ -d lib/",
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"bin": {

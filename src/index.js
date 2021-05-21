@@ -113,7 +113,7 @@ program
 				console.log('req.originalUrl', req.originalUrl);
 				console.log('req.params', req.params);
 
-				if (ignoreResContentTypes.includes(req.headers['content-type'])) {
+				if (ignoreResContentTypes.includes(proxyRes.headers['content-type'])) {
 					return;
 				}
 

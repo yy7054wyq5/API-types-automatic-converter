@@ -1,5 +1,6 @@
 // @flow
-import * as fs from 'fs';
+
+const fs = require('fs');
 
 // node --experimental-modules ./lib/init.js
 // 14.16.1 可以不写 --experimental-modules
@@ -35,4 +36,8 @@ function init() {
 
 init();
 
-export { filePath, init, configPath };
+module.exports = {
+	init,
+	filePath,
+	configPath,
+};
