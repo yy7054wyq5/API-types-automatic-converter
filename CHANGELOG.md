@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [0.3.0](https://github.com/yy7054wyq5/API-types-automatic-converter/compare/v0.2.0...v0.3.0) (2021-05-22)
+
+
+### Features
+
+* bin commander ([74a4140](https://github.com/yy7054wyq5/API-types-automatic-converter/commit/74a4140))
+* it work! ([6a7141d](https://github.com/yy7054wyq5/API-types-automatic-converter/commit/6a7141d))
+
+
+
 # [0.2.0](https://github.com/yy7054wyq5/API-types-automatic-converter/compare/v0.1.0...v0.2.0) (2021-05-21)
 
 
