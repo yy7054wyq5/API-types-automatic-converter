@@ -1,18 +1,51 @@
-// @flow
-const express = require('express');
-const parsingBody = require('body/any');
-const { createProxyMiddleware } = require('http-proxy-middleware');
-const modifyResponse = require('node-http-proxy-json');
-const child_process = require('child_process');
-const fs = require('fs');
-const { StatusCodes } = require('http-status-codes');
+#!/usr/bin/env node
 
+// @flow
+const fs = require('fs');
+const nodeModule = require('module');
+const vm = require('vm');
+const express = require('express');
+const program = require('commander');
+const parsingBody = require('body/any');
+const child_process = require('child_process');
+const { StatusCodes } = require('http-status-codes');
+const modifyResponse = require('node-http-proxy-json');
+const { createProxyMiddleware } = require('http-proxy-middleware');
+
+const { init, ConverResultPath, ConfigPath, DefaultApiUrl } = require('./init');
+const { saveJSON, saveReqParams, saveType } = require('./save');
+const { json2Interface, ts2jsonschema } = require('./converter');
 const { log, LogColors, logSuccess, logError } = require('./log');
 const { firstUpperCase, line2Hump, getQueryParamsFromUrl } = require('./utils');
-const { json2Interface, ts2jsonschema } = require('./converter');
-const { saveJSON, saveReqParams, saveType } = require('./save');
-const { init, filePath, configPath } = require('./init');
-const program = require('commander');
+
+function readConfig(): {
+	proxy: Object,
+	differ: null | (() => boolean),
+	enable: {
+		jsonSchema: boolean,
+		json: boolean,
+	},
+	ignore: {
+		methods: Array<string>,
+		reqContentTypes: Array<string>,
+		resContentTypes: Array<string>,
+	},
+	port: number,
+} {
+	const content = fs.readFileSync(ConfigPath);
+	const getModuleFromFile = (bundle, filename) => {
+		const m = { exports: {} };
+		const wrapper = nodeModule.wrap(bundle);
+		const script = new vm.Script(wrapper, {
+			filename,
+			displayErrors: true,
+		});
+		const result = script.runInThisContext(); // 此处可以指定代码的执行环境，此api在nodejs文档中有介绍
+		result.call(m.exports, m.exports, require, m); // 执行wrapper函数，此处传入require就解决了第一种方法不能require的问题
+		return m;
+	};
+	return getModuleFromFile(content, 'convert-config.js').exports;
+}
 
 function step(
 	req: Object,
@@ -51,12 +84,17 @@ program
 	.command('start')
 	.description('转换器启动')
 	.action(() => {
-		const config = JSON.parse(fs.readFileSync(configPath).toString());
-		const { proxyApiUrl, differ, enable, ignore } = config;
+		const { proxy, differ, enable, ignore, port } = readConfig();
+
+		if (DefaultApiUrl === proxy.apiUrl) {
+			logError('请配置接口的url');
+			return;
+		}
+
 		const { jsonSchema: enableJsonSchema, json: enableJson } = enable;
 		const { methods: ignoreMethods, reqContentTypes: ignoreReqContentTypes, resContentTypes: ignoreResContentTypes } = ignore;
-		const typeFileSavePath = `${filePath}/api-types`;
-		const jsonFileSavePath = `${filePath}/api-json`;
+		const typeFileSavePath = `${ConverResultPath}/api-types`;
+		const jsonFileSavePath = `${ConverResultPath}/api-json`;
 		const ApiTypeFileNameSuffix = {
 			resbody: {
 				json: 'resbody.json',
@@ -69,12 +107,7 @@ program
 		};
 
 		const PROXY_CONFIG = {
-			target: proxyApiUrl,
-			pathRewrite: {
-				'^/api': '',
-			},
-			changeOrigin: true,
-			secure: false,
+			...proxy,
 			onProxyReq: (proxyReq, req, res) => {
 				logSuccess('api-types-creater-serve.js onProxyReq');
 				let { url, method } = req;
@@ -184,5 +217,7 @@ program
 			next();
 		});
 		app.use(apiProxy);
-		app.listen(5400);
+		app.listen(port);
 	});
+
+program.parse();

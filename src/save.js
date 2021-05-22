@@ -27,7 +27,7 @@ function saveJSON(filePath: string, content: string) {
 	});
 }
 
-function saveType(options: { name: string, filePath: string, sourceStr: string, differ?: (pre: string, current: string) => boolean }): Promise<void> {
+function saveType(options: { name: string, filePath: string, sourceStr: string, differ?: null | ((pre: string, current: string) => boolean) }): Promise<void> {
 	const { filePath, name, sourceStr, differ } = options;
 	logSuccess(`save ${filePath} start`);
 	if (!sourceStr) {

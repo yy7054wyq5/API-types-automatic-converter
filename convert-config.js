@@ -1,6 +1,14 @@
 module.exports = {
-	proxyApiUrl: '',
-	differ: null,
+	proxy: {
+		target: 'https://jsonplaceholder.typicode.com',
+		pathRewrite: {
+			'^/api': '',
+		},
+		changeOrigin: true,
+		secure: false,
+	},
+	differ: null, // for update
+	port: 5400,
 	enable: {
 		jsonSchema: false,
 		json: false,
