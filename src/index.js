@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
+const nodeModule = require('module');
+
 // @flow
 const fs = require('fs');
-const nodeModule = require('module');
 const vm = require('vm');
 const express = require('express');
 const program = require('commander');
@@ -177,12 +178,14 @@ program
 							}
 							if (enableJsonSchema) {
 								// 将interface转jsonschema
-								ts2jsonschema({
-									fileName,
-									filePath: resbodyTypeFilePath,
-									tsTypeName: resbodyTypeName,
-									jsonschemaFilePath: `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`,
-								});
+								saveJSON(
+									`${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`,
+									ts2jsonschema({
+										fileName,
+										filePath: resbodyTypeFilePath,
+										tsTypeName: resbodyTypeName,
+									})
+								);
 							}
 						});
 					}

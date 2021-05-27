@@ -5,7 +5,6 @@ const ts2schema = require('typescript-json-schema');
 const path = require('path');
 const resolve = path.resolve;
 const { logError } = require('./log');
-const { saveJSON } = require('./save');
 
 function putInterfaceName(sourceStr: string, interfaceName: string): string {
 	let editedStr = sourceStr;
@@ -24,8 +23,8 @@ function json2Interface(data: Object, interfaceName: string): string {
 	}
 }
 
-function ts2jsonschema(options: { filePath: string, tsTypeName: string, fileName: string, jsonschemaFilePath: string }): void {
-	const { filePath, fileName, tsTypeName, jsonschemaFilePath } = options;
+function ts2jsonschema(options: { filePath: string, tsTypeName: string, fileName: string }): string {
+	const { filePath, fileName, tsTypeName } = options;
 	// optionally pass argument to schema generator
 	const settings = {
 		required: true,
@@ -41,7 +40,7 @@ function ts2jsonschema(options: { filePath: string, tsTypeName: string, fileName
 	// We can either get the schema for one file and one type...
 	let schema = ts2schema.generateSchema(program, tsTypeName, settings);
 	schema.$id = fileName;
-	saveJSON(jsonschemaFilePath, JSON.stringify(schema));
+	return JSON.stringify(schema);
 }
 
 module.exports = {

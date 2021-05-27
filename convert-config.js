@@ -8,7 +8,7 @@ module.exports = {
 		secure: false,
 	},
 	differ: null, // for update
-	port: 5400,
+	port: 5800,
 	enable: {
 		jsonSchema: false,
 		json: false,

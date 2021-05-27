@@ -1,14 +1,14 @@
 {
 	"name": "api-types-automatic-converter",
-	"version": "0.3.0",
+	"version": "0.0.1",
 	"description": "Automatic convert request params and response body of API",
 	"main": "index.js",
 	"scripts": {
 		"flow": "flow",
 		"client": "npx serve ./sample",
-		"init": "npm run flow && babel src/ -d lib/ && node ./lib/init.js",
-		"start": "npm run flow && babel src/ -d lib/ && node ./lib/index.js",
-		"build": "babel src/ -d lib/",
+		"init": "npm run build && node ./lib/init.js",
+		"start": "npm run build && node ./lib/index.js",
+		"build": "npm run flow && babel src/ -d lib/",
 		"cli-demo": "node ./lib/index.js",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
