@@ -12,6 +12,10 @@ An intermediate element in the requesting agent. Between development-client and 
 
 ![avatar](./api-converter.png)
 
+## publish url
+
+https://internal-nexus.haochang.tv/repository/npm-hc/
+
 ## Use
 
     1. npm i api-types-automatic-converter
