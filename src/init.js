@@ -25,6 +25,10 @@ function init() {
 			jsonSchema: false,
 			json: false
 		},
+		filePath: {
+			json: '',
+			types: ''
+		},
 		ignore: {
 			methods: ['delete'],
 			reqContentTypes : [],

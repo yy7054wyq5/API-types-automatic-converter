@@ -3,6 +3,7 @@
 const nodeModule = require('module');
 
 // @flow
+
 const fs = require('fs');
 const vm = require('vm');
 const express = require('express');
@@ -25,6 +26,11 @@ function readConfig(): {
 	enable: {
 		jsonSchema: boolean,
 		json: boolean,
+	},
+	filePath: {
+		json: string,
+		jsonSchema: string,
+		types: string,
 	},
 	ignore: {
 		methods: Array<string>,
@@ -85,7 +91,7 @@ program
 	.command('start')
 	.description('转换器启动')
 	.action(() => {
-		const { proxy, differ, enable, ignore, port } = readConfig();
+		const { proxy, differ, enable, ignore, port, filePath } = readConfig();
 
 		if (DefaultApiUrl === proxy.apiUrl) {
 			logError('请配置接口的url');
@@ -94,8 +100,8 @@ program
 
 		const { jsonSchema: enableJsonSchema, json: enableJson } = enable;
 		const { methods: ignoreMethods, reqContentTypes: ignoreReqContentTypes, resContentTypes: ignoreResContentTypes } = ignore;
-		const typeFileSavePath = `${ConverResultPath}/api-types`;
-		const jsonFileSavePath = `${ConverResultPath}/api-json`;
+		const typeFileSavePath = `${filePath.types}/api-types`;
+		const jsonFileSavePath = `${filePath.json}/api-json`;
 		const ApiTypeFileNameSuffix = {
 			resbody: {
 				json: 'resbody.json',
