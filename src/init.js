@@ -6,7 +6,7 @@ const fs = require('fs');
 // 14.16.1 可以不写 --experimental-modules
 
 const ConfigPath = './convert-config.js';
-const DefaultApiUrl = 'http://yourAPIhost';
+const DefaultApiUrl = 'https://jsonplaceholder.typicode.com';
 
 function init() {
 	const configContent = `module.exports = {
@@ -19,7 +19,7 @@ function init() {
 			secure: false,
 		},
 		differ: null, // for update
-		port: 5400,
+		port: 5800,
 		enable: {
 			jsonSchema: false,
 			json: false
@@ -36,8 +36,6 @@ function init() {
 	}`;
 	fs.writeFile(ConfigPath, configContent, () => {});
 }
-
-init();
 
 module.exports = {
 	init,

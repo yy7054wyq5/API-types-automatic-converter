@@ -115,7 +115,7 @@ program
 
 		const typeFileSavePath = `${filePath.types}/api-types`;
 		const jsonFileSavePath = `${filePath.json}/api-json`;
-		mkdirs(typeFileSavePath, jsonFileSavePath);
+		// mkdirs(typeFileSavePath, jsonFileSavePath);
 
 		const ApiTypeFileNameSuffix = {
 			resbody: {

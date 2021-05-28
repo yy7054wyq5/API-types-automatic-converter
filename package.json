@@ -8,7 +8,7 @@
 		"client": "npx serve ./sample",
 		"init": "npm run build && node ./lib/init.js",
 		"start": "npm run build && node ./lib/index.js -- start",
-		"build": "npm run flow && babel src/ -d lib/",
+		"build": "npm run flow && babel src/ -d lib/ && npm link",
 		"cli-demo": "node ./lib/index.js",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
