@@ -14,7 +14,7 @@ const { StatusCodes } = require('http-status-codes');
 const modifyResponse = require('node-http-proxy-json');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
-const { init, ConverResultPath, ConfigPath, DefaultApiUrl } = require('./init');
+const { init, ConfigPath, DefaultApiUrl } = require('./init');
 const { saveJSON, saveReqParams, saveType } = require('./save');
 const { json2Interface, ts2jsonschema } = require('./converter');
 const { log, LogColors, logSuccess, logError } = require('./log');
@@ -29,7 +29,6 @@ function readConfig(): {
 	},
 	filePath: {
 		json: string,
-		jsonSchema: string,
 		types: string,
 	},
 	ignore: {
@@ -82,6 +81,19 @@ function step(
 	};
 }
 
+function mkdirs(typeFileSavePath: string, jsonFileSavePath: string) {
+	fs.readdir(`${typeFileSavePath}/api-types`, (err, files) => {
+		if (err) {
+			fs.mkdir(`${typeFileSavePath}/api-types`, () => {});
+		}
+	});
+	fs.readdir(`${jsonFileSavePath}/api-json`, (err, files) => {
+		if (err) {
+			fs.mkdir(`${jsonFileSavePath}/api-json`, () => {});
+		}
+	});
+}
+
 program
 	.command('init')
 	.description('初始配置')
@@ -100,8 +112,11 @@ program
 
 		const { jsonSchema: enableJsonSchema, json: enableJson } = enable;
 		const { methods: ignoreMethods, reqContentTypes: ignoreReqContentTypes, resContentTypes: ignoreResContentTypes } = ignore;
+
 		const typeFileSavePath = `${filePath.types}/api-types`;
 		const jsonFileSavePath = `${filePath.json}/api-json`;
+		mkdirs(typeFileSavePath, jsonFileSavePath);
+
 		const ApiTypeFileNameSuffix = {
 			resbody: {
 				json: 'resbody.json',
@@ -132,7 +147,6 @@ program
 					saveReqParams(params, `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.reqparams.interface}`, interfacePrefixName);
 					return;
 				}
-
 				parsingBody(req, res, function (err, body) {
 					if (err) {
 						logError('onProxyReq handle req body err');

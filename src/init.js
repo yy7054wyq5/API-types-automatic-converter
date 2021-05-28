@@ -5,7 +5,6 @@ const fs = require('fs');
 // node --experimental-modules ./lib/init.js
 // 14.16.1 可以不写 --experimental-modules
 
-const ConverResultPath = './convert-result';
 const ConfigPath = './convert-config.js';
 const DefaultApiUrl = 'http://yourAPIhost';
 
@@ -35,16 +34,7 @@ function init() {
 			resContentTypes : ['application/octet-stream'],
 		}
 	}`;
-
-	fs.readdir(ConverResultPath, (err, files) => {
-		if (err) {
-			fs.writeFile(ConfigPath, configContent, () => {});
-			fs.mkdir(ConverResultPath, () => {
-				fs.mkdir(`${ConverResultPath}/api-types`, () => {});
-				fs.mkdir(`${ConverResultPath}/api-json`, () => {});
-			});
-		}
-	});
+	fs.writeFile(ConfigPath, configContent, () => {});
 }
 
 init();
@@ -52,6 +42,5 @@ init();
 module.exports = {
 	init,
 	DefaultApiUrl,
-	ConverResultPath,
 	ConfigPath,
 };
