@@ -15,6 +15,7 @@
 	"bin": {
 		"api-convert-cli": "./lib/index.js"
 	},
+	"license": "MIT",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/yy7054wyq5/API-types-automatic-converter.git"

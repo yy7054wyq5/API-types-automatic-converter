@@ -90,6 +90,10 @@ function mkdirs(typeFileSavePath: string, jsonFileSavePath: string) {
 
 	typeFileSavePath = `${typeFileSavePath}/api-types/`;
 	jsonFileSavePath = `${jsonFileSavePath}/api-json/`;
+
+	mkdirp.sync(typeFileSavePath);
+	mkdirp.sync(jsonFileSavePath);
+
 	return {
 		typeFileSavePath,
 		jsonFileSavePath,
@@ -108,7 +112,7 @@ program
 		const { proxy, differ, enable, ignore, port, filePath } = readConfig();
 
 		if (DefaultApiUrl === proxy.apiUrl) {
-			logError('请配置接口的url');
+			logError('请配置接口的url！！！！！');
 			return;
 		}
 
