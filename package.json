@@ -39,6 +39,7 @@
 		"http-status-codes": "^2.1.4",
 		"json-server": "^0.16.3",
 		"json-to-ts": "^1.7.0",
+		"mkdirp": "^1.0.4",
 		"node-http-proxy-json": "^0.1.9",
 		"typescript-json-schema": "^0.50.0"
 	},

@@ -13,6 +13,7 @@ const child_process = require('child_process');
 const { StatusCodes } = require('http-status-codes');
 const modifyResponse = require('node-http-proxy-json');
 const { createProxyMiddleware } = require('http-proxy-middleware');
+const mkdirp = require('mkdirp');
 
 const { init, ConfigPath, DefaultApiUrl } = require('./init');
 const { saveJSON, saveReqParams, saveType } = require('./save');
@@ -82,16 +83,17 @@ function step(
 }
 
 function mkdirs(typeFileSavePath: string, jsonFileSavePath: string) {
-	fs.readdir(`${typeFileSavePath}/api-types`, (err, files) => {
-		if (err) {
-			fs.mkdir(`${typeFileSavePath}/api-types`, () => {});
-		}
-	});
-	fs.readdir(`${jsonFileSavePath}/api-json`, (err, files) => {
-		if (err) {
-			fs.mkdir(`${jsonFileSavePath}/api-json`, () => {});
-		}
-	});
+	if (!typeFileSavePath || !jsonFileSavePath) {
+		console.error('请配置文件存放路径');
+		return;
+	}
+
+	typeFileSavePath = `${typeFileSavePath}/api-types/`;
+	jsonFileSavePath = `${jsonFileSavePath}/api-json/`;
+	return {
+		typeFileSavePath,
+		jsonFileSavePath,
+	};
 }
 
 program
@@ -112,10 +114,7 @@ program
 
 		const { jsonSchema: enableJsonSchema, json: enableJson } = enable;
 		const { methods: ignoreMethods, reqContentTypes: ignoreReqContentTypes, resContentTypes: ignoreResContentTypes } = ignore;
-
-		const typeFileSavePath = `${filePath.types}/api-types`;
-		const jsonFileSavePath = `${filePath.json}/api-json`;
-		// mkdirs(typeFileSavePath, jsonFileSavePath);
+		const { typeFileSavePath, jsonFileSavePath } = mkdirs(filePath.types, filePath.json);
 
 		const ApiTypeFileNameSuffix = {
 			resbody: {
