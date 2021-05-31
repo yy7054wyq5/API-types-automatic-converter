@@ -22,40 +22,34 @@ function saveReqParams(params: Object, reqParamsFilePath: string, interfacePrefi
 	return Promise.reject();
 }
 
-function saveJSON(filePath: string, content: string) {
-	logSuccess(`save JSON ${filePath} start`);
-	fs.writeFile(filePath, content, {}, (err) => {
-		child_process.exec(`prettier --config ./.prettierrc.json --write ${filePath}`);
-		logSuccess(`update ${filePath} success`);
+function saveJSON(filePath: string, content: string): Promise<void> {
+	return new Promise((resolve, reject) => {
+		logSuccess(`save ${filePath} start`);
+		fs.writeFile(filePath, content, {}, (err) => {
+			logSuccess(`save ${filePath} success`);
+			child_process.exec(`prettier --config ./.prettierrc.json --write ${filePath}`);
+			resolve();
+		});
 	});
 }
 
-function saveType(options: { name: string, filePath: string, sourceStr: string, differ?: null | ((pre: string, current: string) => boolean) }): Promise<void> {
-	const { filePath, name, sourceStr, differ } = options;
+function saveType(options: { name: string, filePath: string, sourceStr: string }): Promise<void> {
+	const { filePath, name, sourceStr } = options;
 	logSuccess(`save ${filePath} start`);
 	if (!sourceStr) {
 		return Promise.reject();
 	}
 	return new Promise((resolve, reject) => {
-		fs.readFile(filePath, {}, (err, data) => {
-			const interfaceStr = sourceStr;
-			let diff = data && (differ ? differ(data.toString(), interfaceStr) : innerDiffer(data.toString(), interfaceStr));
-			if (err || !data || diff) {
-				logSuccess(`save ${filePath} end`);
-				// console.log(interfaceStr);
-				fs.writeFile(filePath, interfaceStr, {}, (err) => {
-					if (err) {
-						logError(`${name}: save interface err`);
-						logError(err);
-						return;
-					}
-					child_process.exec(`prettier --config ./.prettierrc.json --write ${filePath}`);
-					logSuccess(`update ${filePath} success`);
-					resolve();
-				});
+		// console.log(interfaceStr);
+		fs.writeFile(filePath, sourceStr, {}, (err) => {
+			if (err) {
+				logError(`${name}: save interface err`);
+				logError(err);
 				return;
 			}
-			logSuccess(`save ${filePath} end, no update`);
+			child_process.exec(`prettier --config ./.prettierrc.json --write ${filePath}`);
+			logSuccess(`save ${filePath} success`);
+			resolve();
 		});
 	});
 }

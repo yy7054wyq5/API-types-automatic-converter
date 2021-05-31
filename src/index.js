@@ -22,6 +22,8 @@ const { json2Interface, ts2jsonschema } = require('./converter');
 const { log, LogColors, logSuccess, logError } = require('./log');
 const { firstUpperCase, line2Hump, getQueryParamsFromUrl } = require('./utils');
 const ApiTypeFileNameSuffix = require('./suffix-of-file-name.config');
+const { differ } = require('./differ');
+const insideDiffer = differ;
 
 function readConfig(): {
 	proxy: Object,
@@ -90,8 +92,8 @@ function mkdirs(typeFileSavePath: string, jsonFileSavePath: string) {
 		return;
 	}
 
-	typeFileSavePath = `${typeFileSavePath}/api-types/`;
-	jsonFileSavePath = `${jsonFileSavePath}/api-json/`;
+	typeFileSavePath = `${typeFileSavePath}/api-types`;
+	jsonFileSavePath = `${jsonFileSavePath}/api-json`;
 
 	mkdirp.sync(typeFileSavePath);
 	mkdirp.sync(jsonFileSavePath);
@@ -190,33 +192,46 @@ program
 
 					const { fileName, typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
 					const resbodyJsonFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.json}`;
+					const resbodyTypeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.resbody.interface}`;
+					const resbodyTypeName = interfacePrefixName + 'ResbodyI';
+
+					let old;
+					try {
+						old = fs.readFileSync(resbodyJsonFilePath);
+					} catch (error) {}
+					const canUpdate = !old || (differ || insideDiffer)(body, old);
+
+					if (!canUpdate) {
+						log(`save ${resbodyTypeFilePath} end, no update`, LogColors.blue);
+						return;
+					}
 
 					// 保存res body interface
-					if (body && Object.keys(body).length) {
-						const resbodyTypeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.resbody.interface}`;
-						const resbodyTypeName = interfacePrefixName + 'ResbodyI';
+					if (body && Object.keys(body).length && canUpdate) {
 						saveType({
 							filePath: resbodyTypeFilePath,
 							name: resbodyTypeName,
 							sourceStr: json2Interface(body, resbodyTypeName),
-							differ,
-						}).then(() => {
-							if (enableJson) {
-								// 保存data
-								saveJSON(resbodyJsonFilePath, JSON.stringify(body));
-							}
-							if (enableJsonSchema) {
-								// 将interface转jsonschema
-								saveJSON(
-									`${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`,
-									ts2jsonschema({
-										fileName,
-										filePath: resbodyTypeFilePath,
-										tsTypeName: resbodyTypeName,
-									})
-								);
-							}
-						});
+						})
+							.then(() => {
+								if (enableJson) {
+									// 保存data
+									return saveJSON(resbodyJsonFilePath, JSON.stringify(body)).then(() => {});
+								}
+							})
+							.then(() => {
+								if (enableJsonSchema) {
+									// 将interface转jsonschema
+									saveJSON(
+										`${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`,
+										ts2jsonschema({
+											fileName,
+											filePath: resbodyTypeFilePath,
+											tsTypeName: resbodyTypeName,
+										})
+									);
+								}
+							});
 					}
 
 					// mock
