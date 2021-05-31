@@ -124,11 +124,15 @@ program
 		const { methods: ignoreMethods, reqContentTypes: ignoreReqContentTypes, resContentTypes: ignoreResContentTypes } = ignore;
 		const { typeFileSavePath, jsonFileSavePath } = mkdirs(filePath.types, filePath.json);
 
+		// 保护内部的配置
+		delete proxy.onProxyReq;
+		delete proxy.onProxyRes;
+
 		const PROXY_CONFIG = {
 			...proxy,
 			onProxyReq: (proxyReq, req, res) => {
-				logSuccess(' ');
-				logSuccess('代理请求：-----------------------------------------------------------');
+				log(' ', LogColors.white);
+				log('代理请求：-----------------------------------------------------------', LogColors.white);
 				let { url, method } = req;
 				const { typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
 
@@ -166,17 +170,8 @@ program
 				// modify some information
 				// body.age = 2;
 				// delete body.version;
-				logSuccess(' ');
-				logSuccess('代理响应：-----------------------------------------------------------');
-				const table = new Table({
-					head: ['url', 'method', 'body'],
-				});
-				table.push([req.url, req.method, req.params ? JSON.stringify(req.params) : '']);
-				// console.log('req.url', req.url);
-				// console.log('req.method', req.method);
-				// console.log('req.originalUrl', req.originalUrl);
-				// console.log('req.params', req.params);
-				console.log(table.toString());
+				log(' ', LogColors.white);
+				log('代理响应：-----------------------------------------------------------', LogColors.white);
 
 				if (ignoreResContentTypes.includes(proxyRes.headers['content-type'])) {
 					return;
@@ -184,6 +179,12 @@ program
 
 				modifyResponse(res, proxyRes, function (body) {
 					let { url, method } = req;
+
+					const table = new Table({
+						head: ['url', 'method', 'body'],
+					});
+					table.push([url, method, body ? JSON.stringify(body) : '']);
+					console.log(table.toString());
 
 					if (!url || !method) {
 						logError(`代理响应：${url}接口返回无效`);
@@ -216,7 +217,7 @@ program
 							.then(() => {
 								if (enableJson) {
 									// 保存data
-									return saveJSON(resbodyJsonFilePath, JSON.stringify(body)).then(() => {});
+									return saveJSON(resbodyJsonFilePath, JSON.stringify(body));
 								}
 							})
 							.then(() => {

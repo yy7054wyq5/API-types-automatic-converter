@@ -1,7 +1,7 @@
 // @flow
 
 const { json2Interface } = require('./converter');
-const { logError, logSuccess } = require('./log');
+const { logError, logSuccess, log, LogColors } = require('./log');
 const { differ } = require('./differ');
 const innerDiffer = differ;
 const fs = require('fs');
@@ -24,7 +24,7 @@ function saveReqParams(params: Object, reqParamsFilePath: string, interfacePrefi
 
 function saveJSON(filePath: string, content: string): Promise<void> {
 	return new Promise((resolve, reject) => {
-		logSuccess(`save ${filePath} start`);
+		log(`save ${filePath} start`, LogColors.white);
 		fs.writeFile(filePath, content, {}, (err) => {
 			logSuccess(`save ${filePath} success`);
 			child_process.exec(`prettier --config ./.prettierrc.json --write ${filePath}`);
@@ -35,7 +35,7 @@ function saveJSON(filePath: string, content: string): Promise<void> {
 
 function saveType(options: { name: string, filePath: string, sourceStr: string }): Promise<void> {
 	const { filePath, name, sourceStr } = options;
-	logSuccess(`save ${filePath} start`);
+	log(`save ${filePath} start`, LogColors.white);
 	if (!sourceStr) {
 		return Promise.reject();
 	}
