@@ -18,7 +18,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/yy7054wyq5/API-types-automatic-converter.git"
+		"url": "git+https://gitlab.haochang.tv/web-frontend/API-types-automatic-converter.git"
 	},
 	"keywords": [
 		"API",
@@ -28,9 +28,9 @@
 	],
 	"author": "wuyang(wuyang@juwang.cn)",
 	"bugs": {
-		"url": "https://github.com/yy7054wyq5/API-types-automatic-converter/issues"
+		"url": "https://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/-/issues"
 	},
-	"homepage": "https://github.com/yy7054wyq5/API-types-automatic-converter#readme",
+	"homepage": "https://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/-/blob/master/README.md",
 	"dependencies": {
 		"body": "^5.1.0",
 		"commander": "^7.2.0",
