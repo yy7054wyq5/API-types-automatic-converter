@@ -33,6 +33,7 @@
 	"homepage": "https://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/-/blob/master/README.md",
 	"dependencies": {
 		"body": "^5.1.0",
+		"cli-table": "^0.3.6",
 		"commander": "^7.2.0",
 		"express": "^4.17.1",
 		"http-proxy-middleware": "^2.0.0",

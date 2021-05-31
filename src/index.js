@@ -14,12 +14,14 @@ const { StatusCodes } = require('http-status-codes');
 const modifyResponse = require('node-http-proxy-json');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const mkdirp = require('mkdirp');
+const Table = require('cli-table');
 
 const { init, ConfigPath, DefaultApiUrl } = require('./init');
 const { saveJSON, saveReqParams, saveType } = require('./save');
 const { json2Interface, ts2jsonschema } = require('./converter');
 const { log, LogColors, logSuccess, logError } = require('./log');
 const { firstUpperCase, line2Hump, getQueryParamsFromUrl } = require('./utils');
+const ApiTypeFileNameSuffix = require('./suffix-of-file-name.config');
 
 function readConfig(): {
 	proxy: Object,
@@ -111,7 +113,7 @@ program
 	.action(() => {
 		const { proxy, differ, enable, ignore, port, filePath } = readConfig();
 
-		if (DefaultApiUrl === proxy.apiUrl) {
+		if (!proxy.target) {
 			logError('请配置接口的url！！！！！');
 			return;
 		}
@@ -120,21 +122,11 @@ program
 		const { methods: ignoreMethods, reqContentTypes: ignoreReqContentTypes, resContentTypes: ignoreResContentTypes } = ignore;
 		const { typeFileSavePath, jsonFileSavePath } = mkdirs(filePath.types, filePath.json);
 
-		const ApiTypeFileNameSuffix = {
-			resbody: {
-				json: 'resbody.json',
-				interface: 'resbody.interface.ts',
-				jsonschema: 'resbody.jsonschema.json',
-			},
-			reqparams: {
-				interface: 'reqparams.interface.ts',
-			},
-		};
-
 		const PROXY_CONFIG = {
 			...proxy,
 			onProxyReq: (proxyReq, req, res) => {
-				logSuccess('api-types-creater-serve.js onProxyReq');
+				logSuccess(' ');
+				logSuccess('代理请求：-----------------------------------------------------------');
 				let { url, method } = req;
 				const { typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
 
@@ -145,30 +137,44 @@ program
 					return;
 				}
 
+				const doSaveReqParams = (data) => {
+					const table = new Table({
+						head: ['url', 'method', 'params'],
+					});
+					table.push([url, method, data ? JSON.stringify(data) : '']);
+					console.log(table.toString());
+					saveReqParams(data, typeFileSavePathHead, interfacePrefixName);
+				};
+
 				if (method === 'GET') {
 					const params = getQueryParamsFromUrl(url);
-					saveReqParams(params, `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.reqparams.interface}`, interfacePrefixName);
+					doSaveReqParams(params);
 					return;
 				}
 				parsingBody(req, res, function (err, body) {
 					if (err) {
-						logError('onProxyReq handle req body err');
+						logError('代理请求：发生错误');
 						logError(err);
 						return;
 					}
-					saveReqParams(body, typeFileSavePathHead, interfacePrefixName);
+					doSaveReqParams(body);
 				});
 			},
 			onProxyRes: (proxyRes, req, res) => {
 				// modify some information
 				// body.age = 2;
 				// delete body.version;
-
-				logSuccess('api-types-creater-serve.js onProxyRes');
-				console.log('req.url', req.url);
-				console.log('req.method', req.method);
-				console.log('req.originalUrl', req.originalUrl);
-				console.log('req.params', req.params);
+				logSuccess(' ');
+				logSuccess('代理响应：-----------------------------------------------------------');
+				const table = new Table({
+					head: ['url', 'method', 'body'],
+				});
+				table.push([req.url, req.method, req.params ? JSON.stringify(req.params) : '']);
+				// console.log('req.url', req.url);
+				// console.log('req.method', req.method);
+				// console.log('req.originalUrl', req.originalUrl);
+				// console.log('req.params', req.params);
+				console.log(table.toString());
 
 				if (ignoreResContentTypes.includes(proxyRes.headers['content-type'])) {
 					return;
@@ -178,7 +184,7 @@ program
 					let { url, method } = req;
 
 					if (!url || !method) {
-						logError(`${url}: 接口返回无效`);
+						logError(`代理响应：${url}接口返回无效`);
 						return body;
 					}
 
@@ -215,6 +221,7 @@ program
 
 					// mock
 					if (req.headers['mock-response']) {
+						logSuccess('代理响应：返回mock数据');
 						res.statusCode = StatusCodes.OK;
 						try {
 							return JSON.parse(fs.readFileSync(resbodyJsonFilePath).toString());

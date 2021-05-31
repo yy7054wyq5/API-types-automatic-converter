@@ -1,4 +1,5 @@
 module.exports = {
+	/** 就是 http-proxy-middleware 的配置*/
 	proxy: {
 		target: 'https://jsonplaceholder.typicode.com',
 		pathRewrite: {

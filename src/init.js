@@ -10,7 +10,8 @@ const DefaultApiUrl = 'https://jsonplaceholder.typicode.com';
 
 function init() {
 	const configContent = `module.exports = {
-		proxy: {
+		/** 就是 http-proxy-middleware 的配置*/
+		proxy: { 	
 			target: '${DefaultApiUrl}',
 			pathRewrite: {
 				'^/api': '',
