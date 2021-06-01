@@ -24,9 +24,7 @@ function saveReqParams(params: Object, reqParamsFilePath: string, interfacePrefi
 
 function saveJSON(filePath: string, content: string): Promise<void> {
 	return new Promise((resolve, reject) => {
-		log(`save ${filePath} start`, LogColors.white);
 		fs.writeFile(filePath, content, {}, (err) => {
-			logSuccess(`save ${filePath} success`);
 			child_process.exec(`prettier --config ./.prettierrc.json --write ${filePath}`);
 			resolve();
 		});

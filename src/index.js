@@ -216,21 +216,28 @@ program
 						})
 							.then(() => {
 								if (enableJson) {
+									log(`save json ${resbodyJsonFilePath} start`, LogColors.white);
 									// 保存data
-									return saveJSON(resbodyJsonFilePath, JSON.stringify(body));
+									return saveJSON(resbodyJsonFilePath, JSON.stringify(body)).then(() => {
+										logSuccess(`save json ${resbodyJsonFilePath} success`);
+									});
 								}
 							})
 							.then(() => {
 								if (enableJsonSchema) {
+									const schemaFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`;
+									log(`save jsonschema ${schemaFilePath} start`, LogColors.white);
 									// 将interface转jsonschema
 									saveJSON(
-										`${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`,
+										schemaFilePath,
 										ts2jsonschema({
 											fileName,
 											filePath: resbodyTypeFilePath,
 											tsTypeName: resbodyTypeName,
 										})
-									);
+									).then(() => {
+										logSuccess(`save jsonschema ${schemaFilePath} success`);
+									});
 								}
 							});
 					}
