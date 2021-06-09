@@ -33,7 +33,6 @@ function saveJSON(filePath: string, content: string): Promise<void> {
 
 function saveType(options: { name: string, filePath: string, sourceStr: string }): Promise<void> {
 	const { filePath, name, sourceStr } = options;
-	log(`save ${filePath} start`, LogColors.white);
 	if (!sourceStr) {
 		return Promise.reject();
 	}

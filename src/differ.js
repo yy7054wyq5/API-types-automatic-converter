@@ -9,9 +9,11 @@
 // 		: false;
 // }
 
-function differ(current: Object, old: Buffer): boolean {
-	console.log(current);
-	console.log(old.toString());
+function differ(current: Object | null, old: Object | null, oldTypes: string | null, oldSchema: Object | null): boolean {
+	// console.log('current', current, typeof current);
+	// console.log('old', old);
+	// console.log('oldTypes', oldTypes);
+	// console.log('oldSchema', oldSchema);
 	return true;
 }
 

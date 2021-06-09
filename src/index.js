@@ -132,23 +132,25 @@ program
 			...proxy,
 			onProxyReq: (proxyReq, req, res) => {
 				log(' ', LogColors.white);
-				log('代理请求：-----------------------------------------------------------', LogColors.white);
+				log('请求：-----------------------------------------------------------', LogColors.white);
 				let { url, method } = req;
 				const { typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
+				const reqContentType = req.headers['content-type'];
 
 				if (ignoreMethods.includes(method.toLowerCase())) {
 					return;
 				}
-				if (ignoreReqContentTypes.includes(req.headers['content-type'])) {
+				if (ignoreReqContentTypes.includes(reqContentType)) {
 					return;
 				}
 
 				const doSaveReqParams = (data) => {
 					const table = new Table({
-						head: ['url', 'method', 'params'],
+						head: ['url', 'method', 'content-type'],
 					});
-					table.push([url, method, data ? JSON.stringify(data) : '']);
+					table.push([url, method, reqContentType || '']);
 					console.log(table.toString());
+					console.log('params:', data);
 					saveReqParams(data, typeFileSavePathHead, interfacePrefixName);
 				};
 
@@ -159,7 +161,7 @@ program
 				}
 				parsingBody(req, res, function (err, body) {
 					if (err) {
-						logError('代理请求：发生错误');
+						logError('请求：发生错误');
 						logError(err);
 						return;
 					}
@@ -171,9 +173,9 @@ program
 				// body.age = 2;
 				// delete body.version;
 				log(' ', LogColors.white);
-				log('代理响应：-----------------------------------------------------------', LogColors.white);
-
-				if (ignoreResContentTypes.includes(proxyRes.headers['content-type'])) {
+				log('响应：-----------------------------------------------------------', LogColors.white);
+				const responseContentType = proxyRes.headers['content-type'];
+				if (ignoreResContentTypes.includes(responseContentType)) {
 					return;
 				}
 
@@ -181,27 +183,38 @@ program
 					let { url, method } = req;
 
 					const table = new Table({
-						head: ['url', 'method', 'body'],
+						head: ['url', 'method', 'content-type'],
 					});
-					table.push([url, method, body ? JSON.stringify(body) : '']);
+					table.push([url, method, responseContentType || '']);
 					console.log(table.toString());
-
+					console.log('body:', body);
 					if (!url || !method) {
-						logError(`代理响应：${url}接口返回无效`);
+						logError(`响应：${url}接口返回无效`);
 						return body;
 					}
 
 					const { fileName, typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
+					const resbodyTypeName = interfacePrefixName + 'ResbodyI';
 					const resbodyJsonFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.json}`;
 					const resbodyTypeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.resbody.interface}`;
-					const resbodyTypeName = interfacePrefixName + 'ResbodyI';
+					const schemaFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`;
 
-					let old;
+					let oldJsonContent;
+					let oldJsonSchemaContent;
+					let oldTypeFileContent;
 					try {
-						old = fs.readFileSync(resbodyJsonFilePath);
-					} catch (error) {}
-					const canUpdate = !old || (differ || insideDiffer)(body, old);
+						oldJsonContent = fs.readFileSync(resbodyJsonFilePath);
+						oldJsonSchemaContent = fs.readFileSync(schemaFilePath);
+						oldTypeFileContent = fs.readFileSync(resbodyTypeFilePath);
+					} catch (error) {
+						// console.error(error);
+					}
 
+					const oldJson = oldJsonContent ? JSON.parse(oldJsonContent.toString()) : null;
+					const oldSchema = oldJsonSchemaContent ? JSON.parse(oldJsonSchemaContent.toString()) : null;
+					const oldType = oldTypeFileContent ? oldTypeFileContent.toString() : null;
+
+					const canUpdate = (body && !oldType) || (differ || insideDiffer)(body, oldJson, oldType, oldSchema);
 					if (!canUpdate) {
 						log(`save ${resbodyTypeFilePath} end, no update`, LogColors.blue);
 						return;
@@ -210,13 +223,12 @@ program
 					// 保存res body interface
 					if (body && Object.keys(body).length && canUpdate) {
 						saveType({
-							filePath: resbodyTypeFilePath,
 							name: resbodyTypeName,
+							filePath: resbodyTypeFilePath,
 							sourceStr: json2Interface(body, resbodyTypeName),
 						})
 							.then(() => {
 								if (enableJson) {
-									log(`save json ${resbodyJsonFilePath} start`, LogColors.white);
 									// 保存data
 									return saveJSON(resbodyJsonFilePath, JSON.stringify(body)).then(() => {
 										logSuccess(`save json ${resbodyJsonFilePath} success`);
@@ -225,8 +237,6 @@ program
 							})
 							.then(() => {
 								if (enableJsonSchema) {
-									const schemaFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`;
-									log(`save jsonschema ${schemaFilePath} start`, LogColors.white);
 									// 将interface转jsonschema
 									saveJSON(
 										schemaFilePath,
