@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.3](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/compare/v0.0.2...v0.0.3) (2021-06-09)
+
+
+### Features
+
+* 默认配置diff ([33cf90b](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/commit/33cf90b14d635c81198921a12cc5cd49117ca456))
+* 配置文件更名,默认配置修改 ([3f33696](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/commit/3f336969bac8e963a6b79ccfc5d1db49dedd2e3b))
+* 引入ajv校验jsonschema ([28ab7d6](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/commit/28ab7d6e8849d92fca77390c612ee54000b0ed96))
+
 ### 0.0.2 (2021-06-09)
 
 
