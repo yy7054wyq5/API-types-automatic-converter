@@ -5,7 +5,7 @@ const fs = require('fs');
 // node --experimental-modules ./lib/init.js
 // 14.16.1 可以不写 --experimental-modules
 
-const ConfigPath = './convert-config.js';
+const ConfigPath = './api-convert-config.js';
 const DefaultApiUrl = 'https://jsonplaceholder.typicode.com';
 
 function init() {
@@ -40,8 +40,8 @@ function init() {
 		differ, // for update
 		port: 5800,
 		enable: {
-			jsonSchema: false,
-			json: false,
+			jsonSchema: true,
+			json: true,
 		},
 		filePath: {
 			json: './sample/assets/api-json',

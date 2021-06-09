@@ -90,9 +90,6 @@ function mkdirs(typeFileSavePath: string, jsonFileSavePath: string) {
 		return;
 	}
 
-	typeFileSavePath = `${typeFileSavePath}/api-types`;
-	jsonFileSavePath = `${jsonFileSavePath}/api-json`;
-
 	mkdirp.sync(typeFileSavePath);
 	mkdirp.sync(jsonFileSavePath);
 
@@ -226,7 +223,7 @@ program
 						oldJsonSchemaContent = fs.readFileSync(schemaFilePath);
 						oldTypeFileContent = fs.readFileSync(resbodyTypeFilePath);
 					} catch (error) {
-						logError(error);
+						// logError(error);
 					}
 
 					const oldJson = oldJsonContent ? JSON.parse(oldJsonContent.toString()) : null;
