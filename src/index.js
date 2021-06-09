@@ -159,7 +159,7 @@ program
 						});
 						table.push([url, method, reqContentType || '']);
 						console.log(table.toString());
-						console.log('params:', data);
+						// console.log('params:', JSON.stringify(data));
 						/* ------------log--------------- */
 						return saveReqParams(data, typeFileSavePathHead, interfacePrefixName);
 					};
@@ -234,7 +234,7 @@ program
 							});
 							table.push([url, method, responseContentType || '']);
 							console.log(table.toString());
-							console.log('body:', body);
+							// console.log('body:', body);
 							/* ------------log--------------- */
 							saveType({
 								name: resbodyTypeName,
