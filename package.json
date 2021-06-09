@@ -7,17 +7,18 @@
 		"flow": "flow",
 		"client": "npx serve ./sample",
 		"init": "npm run build && node ./lib/init.js",
-		"start": "npm run build && node ./lib/index.js",
-		"build": "npm run flow && babel src/ -d lib/",
+		"start": "npm run build && node ./lib/index.js -- start",
+		"build": "npm run flow && babel src/ -d lib/ && npm link",
 		"cli-demo": "node ./lib/index.js",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"bin": {
 		"api-convert-cli": "./lib/index.js"
 	},
+	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/yy7054wyq5/API-types-automatic-converter.git"
+		"url": "git+https://gitlab.haochang.tv/web-frontend/API-types-automatic-converter.git"
 	},
 	"keywords": [
 		"API",
@@ -25,20 +26,21 @@
 		"converter",
 		"automatic"
 	],
-	"author": "wuyang(349413799@qq.com)",
-	"license": "MIT",
+	"author": "wuyang(wuyang@juwang.cn)",
 	"bugs": {
-		"url": "https://github.com/yy7054wyq5/API-types-automatic-converter/issues"
+		"url": "https://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/-/issues"
 	},
-	"homepage": "https://github.com/yy7054wyq5/API-types-automatic-converter#readme",
+	"homepage": "https://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/-/blob/master/README.md",
 	"dependencies": {
 		"body": "^5.1.0",
+		"cli-table": "^0.3.6",
 		"commander": "^7.2.0",
 		"express": "^4.17.1",
 		"http-proxy-middleware": "^2.0.0",
 		"http-status-codes": "^2.1.4",
 		"json-server": "^0.16.3",
 		"json-to-ts": "^1.7.0",
+		"mkdirp": "^1.0.4",
 		"node-http-proxy-json": "^0.1.9",
 		"typescript-json-schema": "^0.50.0"
 	},

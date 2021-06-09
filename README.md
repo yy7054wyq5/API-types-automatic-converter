@@ -18,7 +18,7 @@ https://internal-nexus.haochang.tv/repository/npm-hc/
 
 ## Use
 
-    1. npm i api-types-automatic-converter
+    1. npm -g i api-types-automatic-converter
     2. api-convert-cli init // in this step, change `target` to your api url in convert-config.js
     3. // change `target` of your project proxy config to converter serve url
     4. api-convert-cli start

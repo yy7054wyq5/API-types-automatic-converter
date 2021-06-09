@@ -5,13 +5,13 @@ const fs = require('fs');
 // node --experimental-modules ./lib/init.js
 // 14.16.1 可以不写 --experimental-modules
 
-const ConverResultPath = './convert-result';
 const ConfigPath = './convert-config.js';
-const DefaultApiUrl = 'http://yourAPIhost';
+const DefaultApiUrl = 'https://jsonplaceholder.typicode.com';
 
 function init() {
 	const configContent = `module.exports = {
-		proxy: {
+		/** 就是 http-proxy-middleware 的配置*/
+		proxy: { 	
 			target: '${DefaultApiUrl}',
 			pathRewrite: {
 				'^/api': '',
@@ -20,10 +20,14 @@ function init() {
 			secure: false,
 		},
 		differ: null, // for update
-		port: 5400,
+		port: 5800,
 		enable: {
 			jsonSchema: false,
 			json: false
+		},
+		filePath: {
+			json: '',
+			types: ''
 		},
 		ignore: {
 			methods: ['delete'],
@@ -31,23 +35,11 @@ function init() {
 			resContentTypes : ['application/octet-stream'],
 		}
 	}`;
-
-	fs.readdir(ConverResultPath, (err, files) => {
-		if (err) {
-			fs.writeFile(ConfigPath, configContent, () => {});
-			fs.mkdir(ConverResultPath, () => {
-				fs.mkdir(`${ConverResultPath}/api-types`, () => {});
-				fs.mkdir(`${ConverResultPath}/api-json`, () => {});
-			});
-		}
-	});
+	fs.writeFile(ConfigPath, configContent, () => {});
 }
-
-init();
 
 module.exports = {
 	init,
 	DefaultApiUrl,
-	ConverResultPath,
 	ConfigPath,
 };
