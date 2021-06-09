@@ -9,11 +9,22 @@
 // 		: false;
 // }
 
+const Ajv = require('ajv');
+
 function differ(current: Object | null, old: Object | null, oldTypes: string | null, oldSchema: Object | null): boolean {
 	// console.log('current', current, typeof current);
 	// console.log('old', old);
 	// console.log('oldTypes', oldTypes);
 	// console.log('oldSchema', oldSchema);
+	const ajv = new Ajv();
+	if (oldSchema && current) {
+		const validate = ajv.compile(oldSchema);
+		const valid = validate(current);
+		if (valid) {
+			return false;
+		}
+	}
+
 	return true;
 }
 

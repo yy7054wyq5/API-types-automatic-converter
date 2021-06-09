@@ -1,9 +1,7 @@
 #!/usr/bin/env node
-
 const nodeModule = require('module');
 
 // @flow
-
 const fs = require('fs');
 const vm = require('vm');
 const express = require('express');
@@ -88,12 +86,9 @@ function step(
 
 function mkdirs(typeFileSavePath: string, jsonFileSavePath: string) {
 	if (!typeFileSavePath || !jsonFileSavePath) {
-		console.error('请配置文件存放路径');
+		log('请配置文件存放路径：filePath中的json和types', LogColors.redBG);
 		return;
 	}
-
-	typeFileSavePath = `${typeFileSavePath}/api-types`;
-	jsonFileSavePath = `${jsonFileSavePath}/api-json`;
 
 	mkdirp.sync(typeFileSavePath);
 	mkdirp.sync(jsonFileSavePath);
@@ -149,18 +144,6 @@ program
 
 				const doSaveReqParams = (data, typeFileSavePathHead, interfacePrefixName) => {
 					triggerSaveReqParams = () => {
-						/* ------------log--------------- */
-						console.log(' ');
-						console.log(' ');
-						console.log(' ');
-						log('请求：-----------------------------------------------------------', LogColors.white);
-						const table = new Table({
-							head: ['url', 'method', 'content-type'],
-						});
-						table.push([url, method, reqContentType || '']);
-						console.log(table.toString());
-						// console.log('params:', JSON.stringify(data));
-						/* ------------log--------------- */
 						return saveReqParams(data, typeFileSavePathHead, interfacePrefixName);
 					};
 				};
@@ -191,8 +174,21 @@ program
 
 				modifyResponse(res, proxyRes, function (body) {
 					let { url, method } = req;
+
+					/* ------------log--------------- */
+					console.log(' ');
+					console.log(' ');
+					const table = new Table({
+						head: ['', 'url', 'method', 'content-type'],
+					});
+					table.push(['Request', url, method, req.headers['content-type'] || '']);
+					table.push(['Response', url, method, responseContentType || '']);
+					console.log(table.toString());
+					// console.log('body:', body);
+					/* ------------log--------------- */
+
 					if (!url || !method) {
-						logError(`${url}接口返回无效`);
+						logError('url或method无效');
 						return body;
 					}
 
@@ -201,71 +197,6 @@ program
 					const resbodyJsonFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.json}`;
 					const resbodyTypeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.resbody.interface}`;
 					const schemaFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`;
-
-					let oldJsonContent;
-					let oldJsonSchemaContent;
-					let oldTypeFileContent;
-					try {
-						oldJsonContent = fs.readFileSync(resbodyJsonFilePath);
-						oldJsonSchemaContent = fs.readFileSync(schemaFilePath);
-						oldTypeFileContent = fs.readFileSync(resbodyTypeFilePath);
-					} catch (error) {
-						console.error(error);
-					}
-
-					const oldJson = oldJsonContent ? JSON.parse(oldJsonContent.toString()) : null;
-					const oldSchema = oldJsonSchemaContent ? JSON.parse(oldJsonSchemaContent.toString()) : null;
-					const oldType = oldTypeFileContent ? oldTypeFileContent.toString() : null;
-
-					const canUpdate = (body && !oldType) || (differ || insideDiffer)(body, oldJson, oldType, oldSchema);
-					if (!canUpdate) {
-						log(`save ${resbodyTypeFilePath} end, no update`, LogColors.blue);
-						return;
-					}
-
-					// 保存res body interface
-					if (body && Object.keys(body).length && canUpdate) {
-						triggerSaveReqParams().then(() => {
-							/* ------------log--------------- */
-							log(' ', LogColors.white);
-							log('响应：-----------------------------------------------------------', LogColors.white);
-							const table = new Table({
-								head: ['url', 'method', 'content-type'],
-							});
-							table.push([url, method, responseContentType || '']);
-							console.log(table.toString());
-							// console.log('body:', body);
-							/* ------------log--------------- */
-							saveType({
-								name: resbodyTypeName,
-								filePath: resbodyTypeFilePath,
-								sourceStr: json2Interface(body, resbodyTypeName),
-							})
-								.then(() => {
-									if (enableJson) {
-										// 保存data
-										return saveJSON(resbodyJsonFilePath, JSON.stringify(body)).then(() => {
-											logSuccess(`save json ${resbodyJsonFilePath} success`);
-										});
-									}
-								})
-								.then(() => {
-									if (enableJsonSchema) {
-										// 将interface转jsonschema
-										saveJSON(
-											schemaFilePath,
-											ts2jsonschema({
-												fileName,
-												filePath: resbodyTypeFilePath,
-												tsTypeName: resbodyTypeName,
-											})
-										).then(() => {
-											logSuccess(`save jsonschema ${schemaFilePath} success`);
-										});
-									}
-								});
-						});
-					}
 
 					// mock
 					if (req.headers['mock-response']) {
@@ -279,6 +210,63 @@ program
 						}
 					}
 
+					if (!body || (typeof body === 'object' && !Object.keys(body).length)) {
+						logError('请禁用浏览器缓存或检查该请求的响应是否正常，cli无法捕获正常的响应体');
+						return body;
+					}
+
+					let oldJsonContent;
+					let oldJsonSchemaContent;
+					let oldTypeFileContent;
+					try {
+						oldJsonContent = fs.readFileSync(resbodyJsonFilePath);
+						oldJsonSchemaContent = fs.readFileSync(schemaFilePath);
+						oldTypeFileContent = fs.readFileSync(resbodyTypeFilePath);
+					} catch (error) {
+						// logError(error);
+					}
+
+					const oldJson = oldJsonContent ? JSON.parse(oldJsonContent.toString()) : null;
+					const oldSchema = oldJsonSchemaContent ? JSON.parse(oldJsonSchemaContent.toString()) : null;
+					const oldType = oldTypeFileContent ? oldTypeFileContent.toString() : null;
+
+					const canUpdate = (body && !oldType) || (differ || insideDiffer)(body, oldJson, oldType, oldSchema);
+					if (!canUpdate) {
+						log(`${resbodyTypeFilePath} not update`, LogColors.blue);
+						return body;
+					}
+
+					triggerSaveReqParams().then(() => {
+						saveType({
+							name: resbodyTypeName,
+							filePath: resbodyTypeFilePath,
+							sourceStr: json2Interface(body, resbodyTypeName),
+						})
+							.then(() => {
+								if (enableJson) {
+									// 保存data
+									return saveJSON(resbodyJsonFilePath, JSON.stringify(body)).then(() => {
+										logSuccess(`save json ${resbodyJsonFilePath} success`);
+									});
+								}
+							})
+							.then(() => {
+								if (enableJsonSchema) {
+									// 将interface转jsonschema
+									saveJSON(
+										schemaFilePath,
+										ts2jsonschema({
+											fileName,
+											filePath: resbodyTypeFilePath,
+											tsTypeName: resbodyTypeName,
+										})
+									).then(() => {
+										logSuccess(`save jsonschema ${schemaFilePath} success`);
+									});
+								}
+							});
+					});
+
 					return body; // return value can be a promise
 				});
 			},
@@ -287,14 +275,6 @@ program
 		const app = express();
 		const apiProxy = createProxyMiddleware(PROXY_CONFIG);
 		app.use(function (req, res, next) {
-			// console.log('\n\nHeaders');
-			// console.log(req.headers);
-
-			// console.log('\nQuery');
-			// console.log(req.query);
-
-			// console.log('\nBody');
-			// console.log(req.body);
 			next();
 		});
 		app.use(apiProxy);
