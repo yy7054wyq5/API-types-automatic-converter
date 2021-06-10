@@ -253,6 +253,7 @@ program
 						return body;
 					}
 
+					// 将参数的保存置于此处，是为了保证日志按序输出
 					return triggerSaveReqParams().then(() => {
 						const { json, schema, type: oldType } = getOldContent(resbodyTypeFilePath, resbodyJsonFilePath, schemaFilePath);
 
