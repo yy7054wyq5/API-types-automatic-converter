@@ -10,15 +10,11 @@ const DefaultApiUrl = 'https://jsonplaceholder.typicode.com';
 
 function init() {
 	const configContent = `const Ajv = require('ajv');
-	function differ(current, old, oldTypes, oldSchema) {
-		// console.log('current', current, typeof current);
-		// console.log('old', old);
-		// console.log('oldTypes', oldTypes);
-		// console.log('oldSchema', oldSchema);
+	function differ(data, oldData, type, oldType, oldSchema) {
 		const ajv = new Ajv();
-		if (oldSchema && current) {
+		if (oldSchema && data) {
 			const validate = ajv.compile(oldSchema);
-			const valid = validate(current);
+			const valid = validate(data);
 			if (valid) {
 				return false;
 			}
@@ -28,7 +24,6 @@ function init() {
 	}
 	
 	module.exports = {
-		/** 就是 http-proxy-middleware 的配置*/
 		proxy: {
 			target: '${DefaultApiUrl}',
 			pathRewrite: {

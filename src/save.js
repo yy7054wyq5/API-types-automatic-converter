@@ -6,15 +6,13 @@ const { differ } = require('./differ');
 const innerDiffer = differ;
 const fs = require('fs');
 const child_process = require('child_process');
-const ApiTypeFileNameSuffix = require('./suffix-of-file-name.config');
 
 function saveReqParams(params: Object, reqParamsFilePath: string, interfacePrefixName: string): Promise<void> {
 	// 保存res params interface
 	if (params && Object.keys(params).length) {
-		const reqparamsTypeFilePath = `${reqParamsFilePath}.${ApiTypeFileNameSuffix.reqparams.interface}`;
 		const reqparamsTypeName = interfacePrefixName + 'ReqparamsI';
 		return saveType({
-			filePath: reqparamsTypeFilePath,
+			filePath: reqParamsFilePath,
 			name: reqparamsTypeName,
 			sourceStr: json2Interface(params, reqparamsTypeName),
 		});

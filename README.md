@@ -9,10 +9,9 @@ vscode-flow-ide: An alternative Flowtype extension for Visual Studio Code. Flowt
 
 ## 原理
 
-1. 在前端和后端之间搭了一个中间服务器，通过反向代理让请求从该服务器过，从而劫持请求和响应做自动转换的功能。
-2. 支持自定义 differ 函数来更新文件，因为接口大多会变化，所以 ts 需要更新，这个更新的判断就是这个 differ 函数的返回，返回 true 就强制更新文件，以最新的 ts 替换
-   原来的。
-3. differ 返回 true 也会重新生成请求参数的 ts
+1. 启动一个处于在前端和后端的中间服务器，通过反向代理让请求从该服务器过，从而劫持请求和响应做自动转换的功能。
+2. 支持自定义 differ() 来更新文件，因为接口大多会变化，所以 ts 需要更新，是强制更新文件，以最新的 ts 替换原来的。
+3. 请求参数和返回数据都通过 differ() 的返回来决定是否更新，两者的参数略有不同。
 
 ![avatar](./api-converter.png)
 
@@ -30,8 +29,8 @@ https://internal-nexus.haochang.tv/repository/npm/
 npm -g i api-types-automatic-converter // 全局安装
 cd [project dir] // 进入项目目录
 api-convert-cli init // 执行初始化命令，将会在根目录生成一个配置文件，见‘配置说明’
-api-convert-cli start // 修改配置文件后启动，将在本地启动一个服务，若端口设置为5800，那么该服务的地址就是http://localhost:5800
-// 根据不同项目，修改已有的代理文件。如果是Angular，则需要将 proxy.conf.json 中的target地址改为http://localhost:5800
+api-convert-cli start // 修改配置文件后启动，将在本地启动一个服务，若端口设置为5800，那么该服务的地址就是 http://localhost:5800
+// 根据不同项目，修改已有的代理文件。如果是Angular，则需要将 proxy.conf.json 中的target地址改为 http://localhost:5800
 ```
 
 ## 配置说明
@@ -43,20 +42,17 @@ const Ajv = require('ajv');
 /**
  * 返回true就更新
  *
- * current: 当前请求返回
- * old: 已保存的请求返回
- * oldTypes: 已保存的请求返回ts内容
+ * data: 当前请求返回
+ * oldData: 已保存的请求返回
+ * oldType: 已保存的请求返回ts内容
  * oldSchema: 已保存的json-schema
  */
-function differ(current, old, oldTypes, oldSchema) {
-	// console.log('current', current, typeof current);
-	// console.log('old', old);
-	// console.log('oldTypes', oldTypes);
-	// console.log('oldSchema', oldSchema);
+const Ajv = require('ajv');
+function differ(data, oldData, type, oldType, oldSchema) {
 	const ajv = new Ajv();
-	if (oldSchema && current) {
+	if (oldSchema && data) {
 		const validate = ajv.compile(oldSchema);
-		const valid = validate(current);
+		const valid = validate(data);
 		if (valid) {
 			return false;
 		}
@@ -66,25 +62,25 @@ function differ(current, old, oldTypes, oldSchema) {
 }
 
 module.exports = {
+	/** 就是 http-proxy-middleware 的配置*/
 	proxy: {
-		target: 'https://jsonplaceholder.typicode.com', // 后端接口地址
+		target: 'https://jsonplaceholder.typicode.com',
 		pathRewrite: {
 			'^/api': '',
 		},
 		changeOrigin: true,
 		secure: false,
 	},
-	differ: () => true, // for update
+	differ, // for update
 	port: 5800,
 	enable: {
-		jsonSchema: true, // 是否保存 jsonSchema
-		json: true, // 是否保存 json
+		jsonSchema: true,
+		json: true,
 	},
 	filePath: {
 		json: './sample/assets/api-json',
 		types: './sample/src/api-types',
 	},
-	// 需要忽略的
 	ignore: {
 		methods: ['delete'],
 		reqContentTypes: [],
