@@ -33,7 +33,7 @@ api-convert-cli start // 修改配置文件后启动，将在本地启动一个�
 
 ## 配置说明
 
-\*\*配置 proxy 的 onProxyReq 和 onProxyRes 是无效的，该库就是通过它们来劫持的 API\*\*
+\*\*配置中的 proxy 其实就是其实就是 http-proxy-middleware 的配置，但 onProxyReq 和 onProxyRes 是无效的，该库就是通过它们来劫持的 API\*\*
 
 ```js
 const Ajv = require('ajv');
@@ -58,7 +58,6 @@ function differ(current, old, oldTypes, oldSchema) {
 }
 
 module.exports = {
-	/** 这个proxy其实就是 http-proxy-middleware 的配置*/
 	proxy: {
 		target: 'https://jsonplaceholder.typicode.com', // 后端接口地址
 		pathRewrite: {
