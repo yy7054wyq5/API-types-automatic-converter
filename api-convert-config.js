@@ -13,7 +13,6 @@ function differ(data, oldData, type, oldType, oldSchema) {
 }
 
 module.exports = {
-	/** 就是 http-proxy-middleware 的配置*/
 	proxy: {
 		target: 'https://jsonplaceholder.typicode.com',
 		pathRewrite: {
@@ -33,7 +32,7 @@ module.exports = {
 		types: './sample/src/api-types',
 	},
 	ignore: {
-		methods: ['delete'],
+		methods: ['delete', 'options'],
 		reqContentTypes: [],
 		resContentTypes: ['application/octet-stream'],
 	},

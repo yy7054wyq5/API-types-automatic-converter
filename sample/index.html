@@ -7,12 +7,11 @@
 		<title>sample</title>
 		<script>
 			function doSth(n) {
-				fetch(`http://localhost:5800/todos/${n}?a=1&b=2&c=dsds`, {
-					// headers: {
-					// 	'Content-type': 'application/json; charset=UTF-8',
-					// },
+				fetch(`http://localhost:5800/todos/${n}?a=1&b=2&c=1111`, {
+					headers: {
+						'mock-response': '1',
+					},
 				}).then((res) => {
-					// fetch(`https://jsonplaceholder.typicode.com/todos/${n}?a=1&b=2&c=dsds`).then((res) => {
 					console.log(res);
 				});
 			}

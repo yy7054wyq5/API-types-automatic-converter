@@ -43,7 +43,7 @@ function init() {
 			types: './sample/src/api-types',
 		},
 		ignore: {
-			methods: ['delete'],
+			methods: ['delete','options'],
 			reqContentTypes: [],
 			resContentTypes: ['application/octet-stream'],
 		},

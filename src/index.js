@@ -230,6 +230,10 @@ program
 						return body;
 					}
 
+					if (ignoreMethods.map((i) => i.toLowerCase()).includes(method.toLowerCase())) {
+						return body;
+					}
+
 					const { fileName, typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
 					const resbodyTypeName = interfacePrefixName + 'ResbodyI';
 					const resbodyJsonFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.json}`;
@@ -242,10 +246,8 @@ program
 						res.statusCode = StatusCodes.OK;
 						try {
 							return JSON.parse(fs.readFileSync(resbodyJsonFilePath).toString());
-						} catch (error) {
-							console.log(error);
-							return body;
-						}
+						} catch (error) {}
+						return body;
 					}
 
 					if (!body || (typeof body === 'object' && !Object.keys(body).length)) {
