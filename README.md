@@ -15,6 +15,10 @@ vscode-flow-ide: An alternative Flowtype extension for Visual Studio Code. Flowt
 
 ![avatar](./api-converter.png)
 
+## 更新策略
+
+覆盖或追加，见配置的 updateStrategy
+
 ## 公司私有 npm 仓库发布地址
 
 https://internal-nexus.haochang.tv/repository/npm-hc/
@@ -57,6 +61,7 @@ function differ(params) {
 }
 module.exports = {
 	differ,
+	updateStrategy: 'cover', // 'cover' | 'append'
 	proxy: { target: 'https://jsonplaceholder.typicode.com', pathRewrite: { '^/api': '' }, changeOrigin: true, secure: false },
 	port: 5800,
 	filePath: { json: './sample/assets/api-json', types: './sample/src/api-types' },
