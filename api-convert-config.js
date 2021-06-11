@@ -1,9 +1,13 @@
-const Ajv = require('ajv');
-function differ(data, oldData, type, oldType, oldSchema) {
+function differ(params) {
+	const Ajv = require('ajv');
+
+	const { data, schema } = params;
 	const ajv = new Ajv();
-	if (oldSchema && data) {
-		const validate = ajv.compile(oldSchema);
+
+	if (schema && data) {
+		const validate = ajv.compile(schema);
 		const valid = validate(data);
+
 		if (valid) {
 			return false;
 		}
@@ -11,29 +15,11 @@ function differ(data, oldData, type, oldType, oldSchema) {
 
 	return true;
 }
-
 module.exports = {
-	proxy: {
-		target: 'https://jsonplaceholder.typicode.com',
-		pathRewrite: {
-			'^/api': '',
-		},
-		changeOrigin: true,
-		secure: false,
-	},
-	differ, // for update
+	differ,
+	proxy: { target: 'https://jsonplaceholder.typicode.com', pathRewrite: { '^/api': '' }, changeOrigin: true, secure: false },
 	port: 5800,
-	enable: {
-		jsonSchema: true,
-		json: true,
-	},
-	filePath: {
-		json: './sample/assets/api-json',
-		types: './sample/src/api-types',
-	},
-	ignore: {
-		methods: ['delete', 'options'],
-		reqContentTypes: [],
-		resContentTypes: ['application/octet-stream'],
-	},
+	enable: { jsonSchema: true, json: true },
+	filePath: { json: './sample/assets/api-json', types: './sample/src/api-types' },
+	ignore: { methods: ['delete', 'options'], reqContentTypes: [], resContentTypes: ['application/octet-stream'] },
 };

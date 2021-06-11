@@ -89,7 +89,7 @@ function step(
 	};
 }
 
-function apiLog(data: any, tag: 'request' | 'response') {
+function apiLog(data: { url: string, method: string, headers: { ['content-type']: string } }, tag: 'request' | 'response') {
 	console.log(' ');
 	console.log('-'.repeat(90));
 	const table = new Table({
@@ -102,12 +102,12 @@ function apiLog(data: any, tag: 'request' | 'response') {
 
 program
 	.command('init')
-	.description('初始配置')
+	.description('初始化配置')
 	.action(() => init());
 
 program
 	.command('start')
-	.description('转换器启动')
+	.description('转换服务启动')
 	.action(() => {
 		const { proxy, differ, enable, ignore, port, filePath } = readConfig();
 
@@ -192,7 +192,7 @@ program
 				// modify some information
 				// body.age = 2;
 				// delete body.version;
-
+				const _proxyRes = proxyRes;
 				const responseContentType = proxyRes.headers['content-type'];
 				if (ignoreResContentTypes.includes(responseContentType)) {
 					return;
@@ -234,7 +234,7 @@ program
 					return triggerSaveReqParams().then(() => {
 						const { json, schema, type: oldType } = getFileContent(resbodyTypeFilePath, resbodyJsonFilePath, schemaFilePath);
 
-						apiLog(res, 'response');
+						apiLog({ url, method, headers: proxyRes.headers }, 'response');
 
 						const typeContent = json2Interface(body, resbodyTypeName);
 

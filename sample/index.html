@@ -8,9 +8,9 @@
 		<script>
 			function doSth(n) {
 				fetch(`http://localhost:5800/todos/${n}?a=1&b=2&c=1111`, {
-					headers: {
-						'mock-response': '1',
-					},
+					// headers: {
+					// 	'mock-response': '1',
+					// },
 				}).then((res) => {
 					console.log(res);
 				});
