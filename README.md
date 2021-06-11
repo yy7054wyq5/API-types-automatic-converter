@@ -38,21 +38,16 @@ api-convert-cli start // 修改配置文件后启动，将在本地启动一个�
 \*\*配置中的 proxy 其实就是 http-proxy-middleware 的配置，但 onProxyReq 和 onProxyRes 是无效的，该库就是通过它们来劫持的 API\*\*
 
 ```js
-const Ajv = require('ajv');
-/**
- * 返回true就更新
- *
- * data: 当前请求返回
- * oldData: 已保存的请求返回
- * oldType: 已保存的请求返回ts内容
- * oldSchema: 已保存的json-schema
- */
-const Ajv = require('ajv');
-function differ(data, oldData, type, oldType, oldSchema) {
+function differ(params) {
+	const Ajv = require('ajv');
+
+	const { data, schema } = params;
 	const ajv = new Ajv();
-	if (oldSchema && data) {
-		const validate = ajv.compile(oldSchema);
+
+	if (schema && data) {
+		const validate = ajv.compile(schema);
 		const valid = validate(data);
+
 		if (valid) {
 			return false;
 		}
@@ -60,32 +55,12 @@ function differ(data, oldData, type, oldType, oldSchema) {
 
 	return true;
 }
-
 module.exports = {
-	/** 就是 http-proxy-middleware 的配置*/
-	proxy: {
-		target: 'https://jsonplaceholder.typicode.com',
-		pathRewrite: {
-			'^/api': '',
-		},
-		changeOrigin: true,
-		secure: false,
-	},
-	differ, // for update
+	differ,
+	proxy: { target: 'https://jsonplaceholder.typicode.com', pathRewrite: { '^/api': '' }, changeOrigin: true, secure: false },
 	port: 5800,
-	enable: {
-		jsonSchema: true,
-		json: true,
-	},
-	filePath: {
-		json: './sample/assets/api-json',
-		types: './sample/src/api-types',
-	},
-	ignore: {
-		methods: ['delete'],
-		reqContentTypes: [],
-		resContentTypes: ['application/octet-stream'],
-	},
+	filePath: { json: './sample/assets/api-json', types: './sample/src/api-types' },
+	ignore: { methods: ['delete', 'options'], reqContentTypes: [], resContentTypes: ['application/octet-stream'] },
 };
 ```
 

@@ -19,7 +19,7 @@ export type DifferParams = {
 
 function differ(params: DifferParams): boolean {
 	const Ajv = require('ajv');
-	const { data, schema } = params;
+	const { data, oldData, typeContent, oldTypeContent, schema } = params;
 	const ajv = new Ajv();
 	if (schema && data) {
 		const validate = ajv.compile(schema);

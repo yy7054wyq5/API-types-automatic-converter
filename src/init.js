@@ -11,6 +11,8 @@ const DefaultApiUrl = 'https://jsonplaceholder.typicode.com';
 const { differ } = require('./differ');
 const child_process = require('child_process');
 
+export type UpdateStrategy = 'cover' | 'append';
+
 const defaultConfig = {
 	proxy: {
 		target: DefaultApiUrl,
@@ -21,11 +23,8 @@ const defaultConfig = {
 		secure: false,
 	},
 	differ, // for update
+	updateStrategy: 'cover', // 'cover' | 'append'
 	port: 5800,
-	enable: {
-		jsonSchema: true,
-		json: true,
-	},
 	filePath: {
 		json: './sample/assets/api-json',
 		types: './sample/src/api-types',

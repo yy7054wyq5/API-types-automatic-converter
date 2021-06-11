@@ -17,7 +17,8 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const Table = require('cli-table');
 
 const { init, ConfigPath, DefaultApiUrl } = require('./init');
-const { saveJSON, saveReqParams, saveType } = require('./save');
+import type { UpdateStrategy } from './init';
+const { saveJSON, saveType } = require('./save');
 const { json2Interface, ts2jsonschema } = require('./converter');
 const { log, LogColors, logSuccess, logError } = require('./log');
 const { firstUpperCase, line2Hump, getQueryParamsFromUrl, getFileContent, mkdirs } = require('./utils');
@@ -27,13 +28,13 @@ const insideDiffer = differ;
 
 import type { DifferParams } from './differ';
 
+type Tag = 'request' | 'response';
+
 function readConfig(): {
+	port: number,
 	proxy: Object,
+	updateStrategy: UpdateStrategy,
 	differ: null | ((params: DifferParams) => boolean),
-	enable: {
-		jsonSchema: boolean,
-		json: boolean,
-	},
 	filePath: {
 		json: string,
 		types: string,
@@ -43,7 +44,6 @@ function readConfig(): {
 		reqContentTypes: Array<string>,
 		resContentTypes: Array<string>,
 	},
-	port: number,
 } {
 	const content = fs.readFileSync(ConfigPath);
 	const getModuleFromFile = (bundle, filename) => {
@@ -89,7 +89,7 @@ function step(
 	};
 }
 
-function apiLog(data: { url: string, method: string, headers: { ['content-type']: string } }, tag: 'request' | 'response') {
+function apiLog(data: { url: string, method: string, headers: { ['content-type']: string } }, tag: Tag) {
 	console.log(' ');
 	console.log('-'.repeat(90));
 	const table = new Table({
@@ -109,24 +109,21 @@ program
 	.command('start')
 	.description('转换服务启动')
 	.action(() => {
-		const { proxy, differ, enable, ignore, port, filePath } = readConfig();
+		const { proxy, differ, ignore, port, filePath, updateStrategy } = readConfig();
+		const _differ = differ || insideDiffer;
 
 		if (!proxy.target) {
-			logError('请配置接口的url！！！！！');
+			logError('请配置接口的url');
 			return;
 		}
 
-		const { jsonSchema: enableJsonSchema, json: enableJson } = enable;
 		const { methods: ignoreMethods, reqContentTypes: ignoreReqContentTypes, resContentTypes: ignoreResContentTypes } = ignore;
 		const { typeFileSavePath, jsonFileSavePath } = mkdirs(filePath.types, filePath.json);
 
 		if (!typeFileSavePath || !jsonFileSavePath) {
+			logError('请配置有效的文件存放路径');
 			return;
 		}
-
-		// 保护内部的配置
-		delete proxy.onProxyReq;
-		delete proxy.onProxyRes;
 
 		/**
 		 * 记录保存请求参数的函数，放到diff完后执行
@@ -135,152 +132,170 @@ program
 			return Promise.resolve();
 		};
 
-		const PROXY_CONFIG = {
-			...proxy,
-			onProxyReq: (proxyReq, req, res) => {
-				let { url, method } = req;
-				const { typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
-				const reqparamsTypeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.reqparams.interface}`;
-				const reqContentType = req.headers['content-type'];
+		/**
+		 * 代理请求
+		 */
+		const onProxyReq = (proxyReq, req, res) => {
+			let { url, method } = req;
+			const { typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
+			const typeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.reqparams.interface}`;
+			const contentType = req.headers['content-type'];
+			const typeName = `${interfacePrefixName}ReqparamsI`;
 
-				if (ignoreMethods.map((i) => i.toLowerCase()).includes(method.toLowerCase())) {
-					return;
-				}
-				if (ignoreReqContentTypes.includes(reqContentType)) {
-					return;
-				}
+			if (ignoreMethods.map((i) => i.toLowerCase()).includes(method.toLowerCase())) {
+				return;
+			}
+			if (ignoreReqContentTypes.includes(contentType)) {
+				return;
+			}
 
-				const doSaveReqParams = (data) => {
-					triggerSaveReqParams = () => {
-						apiLog(req, 'request');
+			const doSaveReqParams = (data) => {
+				triggerSaveReqParams = () => {
+					apiLog(req, 'request');
 
-						const { type: oldType } = getFileContent(reqparamsTypeFilePath);
-						const typeContent = json2Interface(data, `${interfacePrefixName}ReqparamsI`);
+					const { type: oldTypeContent } = getFileContent(typeFilePath);
+					const typeContent = json2Interface(data, typeName);
 
-						const canUpdate =
-							(data && !oldType) ||
-							(differ || insideDiffer)({
-								data,
-								oldData: null,
-								typeContent,
-								oldTypeContent: oldType,
-							});
+					const canUpdate =
+						(data && !oldTypeContent) ||
+						_differ({
+							data,
+							oldData: null,
+							typeContent,
+							oldTypeContent,
+						});
 
-						if (!canUpdate) {
-							log(`${reqparamsTypeFilePath} not update`, LogColors.blue);
-							return Promise.resolve();
-						}
-						return saveReqParams(data, reqparamsTypeFilePath, interfacePrefixName);
-					};
-				};
-
-				if (method === 'GET') {
-					const params = getQueryParamsFromUrl(url);
-					doSaveReqParams(params);
-					return;
-				}
-				parsingBody(req, res, function (err, body) {
-					if (err) {
-						logError('发生错误');
-						logError(err);
-						return;
+					if (!canUpdate) {
+						log(`${typeFilePath} not update`, LogColors.blue);
+						return Promise.resolve();
 					}
-					doSaveReqParams(body);
-				});
-			},
-			onProxyRes: (proxyRes, req, res) => {
+
+					let updateContent = typeContent;
+					if (updateStrategy === 'append' && oldTypeContent) {
+						updateContent = `${oldTypeContent || ''} ${json2Interface(data, typeName + 'Latest')}`;
+					}
+					log('update' + typeFilePath, LogColors.blackBG);
+					return saveType({
+						filePath: typeFilePath,
+						content: updateContent,
+					});
+				};
+			};
+
+			if (method === 'GET') {
+				const params = getQueryParamsFromUrl(url);
+				doSaveReqParams(params);
+				return;
+			}
+			parsingBody(req, res, function (err, body) {
+				if (err) {
+					logError('发生错误');
+					logError(err);
+					return;
+				}
+				doSaveReqParams(body);
+			});
+		};
+
+		/**
+		 * 代理响应
+		 */
+		const onProxyRes = (proxyRes, req, res) => {
+			const responseContentType = proxyRes.headers['content-type'];
+			if (ignoreResContentTypes.includes(responseContentType)) {
+				return;
+			}
+
+			modifyResponse(res, proxyRes, function (body) {
 				// modify some information
 				// body.age = 2;
 				// delete body.version;
-				const _proxyRes = proxyRes;
-				const responseContentType = proxyRes.headers['content-type'];
-				if (ignoreResContentTypes.includes(responseContentType)) {
-					return;
+
+				let { url, method } = req;
+				if (!url || !method) {
+					logError('url或method无效');
+					return body;
 				}
 
-				modifyResponse(res, proxyRes, function (body) {
-					let { url, method } = req;
-					if (!url || !method) {
-						logError('url或method无效');
-						return body;
-					}
+				if (ignoreMethods.map((i) => i.toLowerCase()).includes(method.toLowerCase())) {
+					return body;
+				}
 
-					if (ignoreMethods.map((i) => i.toLowerCase()).includes(method.toLowerCase())) {
-						return body;
-					}
+				const { fileName, typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
+				const typeName = interfacePrefixName + 'ResbodyI';
+				const jsonFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.json}`;
+				const typeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.resbody.interface}`;
+				const schemaFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`;
 
-					const { fileName, typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
-					const resbodyTypeName = interfacePrefixName + 'ResbodyI';
-					const resbodyJsonFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.json}`;
-					const resbodyTypeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.resbody.interface}`;
-					const schemaFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`;
+				// mock
+				if (req.headers['mock-response']) {
+					logSuccess('代理响应：返回mock数据');
+					res.statusCode = StatusCodes.OK;
+					try {
+						return JSON.parse(fs.readFileSync(jsonFilePath).toString());
+					} catch (error) {}
+					return body;
+				}
 
-					// mock
-					if (req.headers['mock-response']) {
-						logSuccess('代理响应：返回mock数据');
-						res.statusCode = StatusCodes.OK;
-						try {
-							return JSON.parse(fs.readFileSync(resbodyJsonFilePath).toString());
-						} catch (error) {}
-						return body;
-					}
+				if (!body || (typeof body === 'object' && !Object.keys(body).length)) {
+					logError('请禁用浏览器缓存或检查该请求的响应是否正常，cli无法捕获正常的响应体');
+					return body;
+				}
 
-					if (!body || (typeof body === 'object' && !Object.keys(body).length)) {
-						logError('请禁用浏览器缓存或检查该请求的响应是否正常，cli无法捕获正常的响应体');
-						return body;
-					}
+				// 将参数的保存置于此处，是为了保证日志按序输出
+				return triggerSaveReqParams().then(() => {
+					const { json, schema, type: oldTypeContent } = getFileContent(typeFilePath, jsonFilePath, schemaFilePath);
 
-					// 将参数的保存置于此处，是为了保证日志按序输出
-					return triggerSaveReqParams().then(() => {
-						const { json, schema, type: oldType } = getFileContent(resbodyTypeFilePath, resbodyJsonFilePath, schemaFilePath);
+					apiLog({ url, method, headers: proxyRes.headers }, 'response');
 
-						apiLog({ url, method, headers: proxyRes.headers }, 'response');
+					const typeContent = json2Interface(body, typeName);
 
-						const typeContent = json2Interface(body, resbodyTypeName);
-
-						const canUpdate =
-							(body && !oldType) ||
-							(differ || insideDiffer)({
-								data: body,
-								oldData: json,
-								typeContent,
-								oldTypeContent: oldType,
-								schema,
-							});
-
-						if (!canUpdate) {
-							log(`${resbodyTypeFilePath} not update`, LogColors.blue);
-							return body;
-						}
-
-						saveType({
-							name: resbodyTypeName,
-							filePath: resbodyTypeFilePath,
-							sourceStr: typeContent,
-						}).then(() => {
-							if (enableJson) {
-								// 保存data
-								saveJSON(resbodyJsonFilePath, JSON.stringify(body)).then(() => {
-									logSuccess(`save json ${resbodyJsonFilePath} success`);
-								});
-							}
-							if (enableJsonSchema) {
-								// 将interface转jsonschema
-								const schemaContent = ts2jsonschema({
-									fileName,
-									filePath: resbodyTypeFilePath,
-									tsTypeName: resbodyTypeName,
-								});
-								saveJSON(schemaFilePath, schemaContent).then(() => {
-									logSuccess(`save jsonschema ${schemaFilePath} success`);
-								});
-							}
+					const canUpdate =
+						(body && !oldTypeContent) ||
+						_differ({
+							data: body,
+							oldData: json,
+							typeContent,
+							oldTypeContent,
+							schema,
 						});
 
-						return body; // return value can be a promise
+					if (!canUpdate) {
+						log(`${typeFilePath} not update`, LogColors.blue);
+						return body;
+					}
+
+					let updateContent = typeContent;
+					if (updateStrategy === 'append' && oldTypeContent) {
+						updateContent = `${oldTypeContent || ''} ${json2Interface(json, typeName + 'Latest')}`;
+					}
+
+					log('update' + typeFilePath, LogColors.blackBG);
+
+					saveType({
+						filePath: typeFilePath,
+						content: updateContent,
+					}).then(() => {
+						// 保存data
+						saveJSON(jsonFilePath, JSON.stringify(body)).then(() => {});
+						// 将interface转jsonschema
+						const schemaContent = ts2jsonschema({
+							fileName,
+							filePath: typeFilePath,
+							tsTypeName: typeName,
+						});
+						saveJSON(schemaFilePath, schemaContent).then(() => {});
 					});
+
+					return body; // return value can be a promise
 				});
-			},
+			});
+		};
+
+		const PROXY_CONFIG = {
+			...proxy,
+			onProxyReq,
+			onProxyRes,
 		};
 
 		const app = express();
