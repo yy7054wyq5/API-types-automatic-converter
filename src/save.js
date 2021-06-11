@@ -6,21 +6,7 @@ const { differ } = require('./differ');
 const innerDiffer = differ;
 const fs = require('fs');
 const child_process = require('child_process');
-const ApiTypeFileNameSuffix = require('./suffix-of-file-name.config');
-
-function saveReqParams(params: Object, reqParamsFilePath: string, interfacePrefixName: string): Promise<void> {
-	// 保存res params interface
-	if (params && Object.keys(params).length) {
-		const reqparamsTypeFilePath = `${reqParamsFilePath}.${ApiTypeFileNameSuffix.reqparams.interface}`;
-		const reqparamsTypeName = interfacePrefixName + 'ReqparamsI';
-		return saveType({
-			filePath: reqparamsTypeFilePath,
-			name: reqparamsTypeName,
-			sourceStr: json2Interface(params, reqparamsTypeName),
-		});
-	}
-	return Promise.reject();
-}
+import type { UpdateStrategy } from './init';
 
 function saveJSON(filePath: string, content: string): Promise<void> {
 	return new Promise((resolve, reject) => {
@@ -31,16 +17,16 @@ function saveJSON(filePath: string, content: string): Promise<void> {
 	});
 }
 
-function saveType(options: { name: string, filePath: string, sourceStr: string }): Promise<void> {
-	const { filePath, name, sourceStr } = options;
-	if (!sourceStr) {
+function saveType(options: { filePath: string, content: string }): Promise<void> {
+	const { filePath, content } = options;
+	if (!content) {
 		return Promise.reject();
 	}
 	return new Promise((resolve, reject) => {
 		// console.log(interfaceStr);
-		fs.writeFile(filePath, sourceStr, {}, (err) => {
+		fs.writeFile(filePath, content, {}, (err) => {
 			if (err) {
-				logError(`${name}: save interface err`);
+				logError(`${filePath}: save interface err`);
 				logError(err);
 				return;
 			}
@@ -51,4 +37,4 @@ function saveType(options: { name: string, filePath: string, sourceStr: string }
 	});
 }
 
-module.exports = { saveReqParams, saveType, saveJSON };
+module.exports = { saveType, saveJSON };

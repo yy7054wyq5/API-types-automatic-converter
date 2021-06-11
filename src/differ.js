@@ -9,17 +9,21 @@
 // 		: false;
 // }
 
-const Ajv = require('ajv');
+export type DifferParams = {
+	data: Object,
+	oldData: Object | null,
+	typeContent: string,
+	oldTypeContent: string | null,
+	schema?: Object,
+};
 
-function differ(current: Object | null, old: Object | null, oldTypes: string | null, oldSchema: Object | null): boolean {
-	// console.log('current', current, typeof current);
-	// console.log('old', old);
-	// console.log('oldTypes', oldTypes);
-	// console.log('oldSchema', oldSchema);
+function differ(params: DifferParams): boolean {
+	const Ajv = require('ajv');
+	const { data, oldData, typeContent, oldTypeContent, schema } = params;
 	const ajv = new Ajv();
-	if (oldSchema && current) {
-		const validate = ajv.compile(oldSchema);
-		const valid = validate(current);
+	if (schema && data) {
+		const validate = ajv.compile(schema);
+		const valid = validate(data);
 		if (valid) {
 			return false;
 		}

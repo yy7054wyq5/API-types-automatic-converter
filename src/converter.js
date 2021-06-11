@@ -2,6 +2,7 @@
 
 const json2ts = require('json-to-ts');
 const ts2schema = require('typescript-json-schema');
+
 const path = require('path');
 const resolve = path.resolve;
 const { logError } = require('./log');
@@ -13,6 +14,9 @@ function putInterfaceName(sourceStr: string, interfaceName: string): string {
 }
 
 function json2Interface(data: Object, interfaceName: string): string {
+	if (!data) {
+		return '';
+	}
 	try {
 		const str = json2ts.default(data).toString().replace(/,/g, ' ');
 		return putInterfaceName(str, interfaceName);
