@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-const nodeModule = require('module');
 
 // @flow
+
+// $FlowFixMe
+const nodeModule = require('module');
 
 const fs = require('fs');
 const vm = require('vm');
@@ -12,21 +14,22 @@ const child_process = require('child_process');
 const { StatusCodes } = require('http-status-codes');
 const modifyResponse = require('node-http-proxy-json');
 const { createProxyMiddleware } = require('http-proxy-middleware');
-const mkdirp = require('mkdirp');
 const Table = require('cli-table');
 
 const { init, ConfigPath, DefaultApiUrl } = require('./init');
 const { saveJSON, saveReqParams, saveType } = require('./save');
 const { json2Interface, ts2jsonschema } = require('./converter');
 const { log, LogColors, logSuccess, logError } = require('./log');
-const { firstUpperCase, line2Hump, getQueryParamsFromUrl } = require('./utils');
+const { firstUpperCase, line2Hump, getQueryParamsFromUrl, getFileContent, mkdirs } = require('./utils');
 const ApiTypeFileNameSuffix = require('./suffix-of-file-name.config');
 const { differ } = require('./differ');
 const insideDiffer = differ;
 
+import type { DifferParams } from './differ';
+
 function readConfig(): {
 	proxy: Object,
-	differ: null | (() => boolean),
+	differ: null | ((params: DifferParams) => boolean),
 	enable: {
 		jsonSchema: boolean,
 		json: boolean,
@@ -45,6 +48,7 @@ function readConfig(): {
 	const content = fs.readFileSync(ConfigPath);
 	const getModuleFromFile = (bundle, filename) => {
 		const m = { exports: {} };
+
 		const wrapper = nodeModule.wrap(bundle);
 		const script = new vm.Script(wrapper, {
 			filename,
@@ -85,51 +89,15 @@ function step(
 	};
 }
 
-function mkdirs(typeFileSavePath: string, jsonFileSavePath: string) {
-	if (!typeFileSavePath || !jsonFileSavePath) {
-		log('请配置文件存放路径：filePath中的json和types', LogColors.redBG);
-		return;
-	}
-
-	mkdirp.sync(typeFileSavePath);
-	mkdirp.sync(jsonFileSavePath);
-
-	return {
-		typeFileSavePath,
-		jsonFileSavePath,
-	};
-}
-
-function getOldContent(
-	typeFilePath: string,
-	jsonFilePath?: string,
-	schemaFilePath?: string
-): {
-	json: object | null,
-	schema: object | null,
-	type: string | null,
-} {
-	let oldJsonContent;
-	let oldJsonSchemaContent;
-	let oldTypeFileContent;
-	try {
-		oldJsonContent = fs.readFileSync(jsonFilePath);
-	} catch (error) {}
-	try {
-		oldJsonSchemaContent = fs.readFileSync(schemaFilePath);
-	} catch (error) {}
-	try {
-		oldTypeFileContent = fs.readFileSync(typeFilePath);
-	} catch (error) {}
-
-	const oldJson = oldJsonContent ? JSON.parse(oldJsonContent.toString()) : null;
-	const oldSchema = oldJsonSchemaContent ? JSON.parse(oldJsonSchemaContent.toString()) : null;
-	const oldType = oldTypeFileContent ? oldTypeFileContent.toString() : null;
-	return {
-		json: oldJson,
-		schema: oldSchema,
-		type: oldType,
-	};
+function apiLog(data: any, tag: 'request' | 'response') {
+	console.log(' ');
+	console.log('-'.repeat(90));
+	const table = new Table({
+		head: ['', 'url', 'method', 'content-type'],
+	});
+	table.push([tag, data.url, data.method, data.headers['content-type'] || '']);
+	console.log(table.toString());
+	// console.log('body:', body);
 }
 
 program
@@ -152,6 +120,10 @@ program
 		const { methods: ignoreMethods, reqContentTypes: ignoreReqContentTypes, resContentTypes: ignoreResContentTypes } = ignore;
 		const { typeFileSavePath, jsonFileSavePath } = mkdirs(filePath.types, filePath.json);
 
+		if (!typeFileSavePath || !jsonFileSavePath) {
+			return;
+		}
+
 		// 保护内部的配置
 		delete proxy.onProxyReq;
 		delete proxy.onProxyRes;
@@ -159,7 +131,9 @@ program
 		/**
 		 * 记录保存请求参数的函数，放到diff完后执行
 		 */
-		function triggerSaveReqParams(): Promise<void> {}
+		let triggerSaveReqParams: () => Promise<void> = () => {
+			return Promise.resolve();
+		};
 
 		const PROXY_CONFIG = {
 			...proxy,
@@ -178,22 +152,23 @@ program
 
 				const doSaveReqParams = (data) => {
 					triggerSaveReqParams = () => {
-						/* ------------log--------------- */
-						console.log(' ');
-						console.log('-'.repeat(90));
-						const table = new Table({
-							head: ['', 'url', 'method', 'content-type'],
-						});
-						table.push(['request', url, method, reqContentType || '']);
-						console.log(table.toString());
-						// console.log('body:', body);
-						/* ------------log--------------- */
-						const { type: oldType } = getOldContent(reqparamsTypeFilePath);
+						apiLog(req, 'request');
+
+						const { type: oldType } = getFileContent(reqparamsTypeFilePath);
 						const typeContent = json2Interface(data, `${interfacePrefixName}ReqparamsI`);
-						const canUpdate = (data && !oldType) || (differ || insideDiffer)(data, null, typeContent, oldType);
+
+						const canUpdate =
+							(data && !oldType) ||
+							(differ || insideDiffer)({
+								data,
+								oldData: null,
+								typeContent,
+								oldTypeContent: oldType,
+							});
+
 						if (!canUpdate) {
 							log(`${reqparamsTypeFilePath} not update`, LogColors.blue);
-							return;
+							return Promise.resolve();
 						}
 						return saveReqParams(data, reqparamsTypeFilePath, interfacePrefixName);
 					};
@@ -257,19 +232,21 @@ program
 
 					// 将参数的保存置于此处，是为了保证日志按序输出
 					return triggerSaveReqParams().then(() => {
-						const { json, schema, type: oldType } = getOldContent(resbodyTypeFilePath, resbodyJsonFilePath, schemaFilePath);
+						const { json, schema, type: oldType } = getFileContent(resbodyTypeFilePath, resbodyJsonFilePath, schemaFilePath);
 
-						/* ------------log--------------- */
-						const table = new Table({
-							head: ['', 'url', 'method', 'content-type'],
-						});
-						table.push(['response', url, method, req.headers['content-type'] || '']);
-						console.log(table.toString());
-						// console.log('body:', body);
-						/* ------------log--------------- */
+						apiLog(res, 'response');
 
 						const typeContent = json2Interface(body, resbodyTypeName);
-						const canUpdate = (body && !oldType) || (differ || insideDiffer)(body, json, typeContent, oldType, schema);
+
+						const canUpdate =
+							(body && !oldType) ||
+							(differ || insideDiffer)({
+								data: body,
+								oldData: json,
+								typeContent,
+								oldTypeContent: oldType,
+								schema,
+							});
 
 						if (!canUpdate) {
 							log(`${resbodyTypeFilePath} not update`, LogColors.blue);
