@@ -121,7 +121,7 @@ function ignoreProxy(req: Req, ignoreUrls: string[], ignoreMethods: string[]): b
 }
 
 function creatTmpTSFile(filePath: string, content: string): string {
-	const newContentFilePath = filePath.split('.ts')[0] + 'tmp' + '.ts';
+	const newContentFilePath = filePath.split('.ts')[0] + '.tmp' + '.ts';
 	if (content) {
 		fs.writeFileSync(newContentFilePath, content);
 	}
@@ -306,7 +306,9 @@ program
 							filePath: tmpTSFilePath || typeFilePath,
 							tsTypeName: typeName,
 						});
-						saveJSON(schemaFilePath, schemaContent).then(() => {});
+						saveJSON(schemaFilePath, schemaContent).then(() => {
+							fs.unlinkSync(tmpTSFilePath);
+						});
 					});
 
 					return body; // return value can be a promise
