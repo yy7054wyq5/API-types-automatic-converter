@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.1](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/compare/v0.4.0...v0.4.1) (2021-06-15)
+
+
+### Features
+
+* 去掉表格样式的日志,增加忽略url的配置 ([3223a6c](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/commit/3223a6cebe52a833dd68929ab9a16dd792996b90))
+
 ## [0.4.0](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/compare/v0.3.2...v0.4.0) (2021-06-11)
 
 ### [0.3.2](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/compare/v0.3.1...v0.3.2) (2021-06-11)
