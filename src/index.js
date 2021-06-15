@@ -31,6 +31,8 @@ type Req = { url: string, method: string, headers: { ['content-type']: string } 
 
 type Tag = 'request' | 'response';
 
+const Latest = 'Latest';
+
 function readConfig(): {
 	port: number,
 	proxy: Object,
@@ -171,10 +173,8 @@ program
 			const doSaveReqParams = (data) => {
 				triggerSaveReqParams = () => {
 					apiLog(req, 'request');
-
 					const { type: oldTypeContent } = getFileContent(typeFilePath);
 					const typeContent = json2Interface(data, typeName);
-
 					const canUpdate =
 						(data && !oldTypeContent) ||
 						_differ({
@@ -183,17 +183,16 @@ program
 							typeContent,
 							oldTypeContent,
 						});
-
 					if (!canUpdate) {
 						log(`${typeFilePath} not update`, LogColors.blue);
 						return Promise.resolve();
 					}
-
 					let updateContent = typeContent;
-					if (updateStrategy === 'append' && oldTypeContent) {
-						updateContent = `${oldTypeContent || ''} ${json2Interface(data, typeName + 'Latest')}`;
+					if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
+						updateContent = `${oldTypeContent || ''} ${json2Interface(data, typeName + Latest)}`;
 					}
-					log('update' + typeFilePath, LogColors.blackBG);
+					log('update' + typeFilePath, LogColors.cyanBG);
+
 					return saveType({
 						filePath: typeFilePath,
 						content: updateContent,
@@ -264,11 +263,8 @@ program
 				// 将参数的保存置于此处，是为了保证日志按序输出
 				return triggerSaveReqParams().then(() => {
 					const { json, schema, type: oldTypeContent } = getFileContent(typeFilePath, jsonFilePath, schemaFilePath);
-
 					apiLog({ url, method, headers: proxyRes.headers }, 'response');
-
 					const typeContent = json2Interface(body, typeName);
-
 					const canUpdate =
 						(body && !oldTypeContent) ||
 						_differ({
@@ -278,18 +274,15 @@ program
 							oldTypeContent,
 							schema,
 						});
-
 					if (!canUpdate) {
 						log(`${typeFilePath} not update`, LogColors.blue);
 						return body;
 					}
-
 					let updateContent = typeContent;
-					if (updateStrategy === 'append' && oldTypeContent) {
-						updateContent = `${oldTypeContent || ''} ${json2Interface(json, typeName + 'Latest')}`;
+					if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
+						updateContent = `${oldTypeContent || ''} ${json2Interface(json, typeName + Latest)}`;
 					}
-
-					log('update' + typeFilePath, LogColors.blackBG);
+					log('update' + typeFilePath, LogColors.cyanBG);
 
 					saveType({
 						filePath: typeFilePath,
