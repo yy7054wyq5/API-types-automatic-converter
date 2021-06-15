@@ -14,7 +14,6 @@ const child_process = require('child_process');
 const { StatusCodes } = require('http-status-codes');
 const modifyResponse = require('node-http-proxy-json');
 const { createProxyMiddleware } = require('http-proxy-middleware');
-const Table = require('cli-table');
 
 const { init, ConfigPath, DefaultApiUrl } = require('./init');
 import type { UpdateStrategy } from './init';
@@ -28,6 +27,8 @@ const insideDiffer = differ;
 
 import type { DifferParams } from './differ';
 
+type Req = { url: string, method: string, headers: { ['content-type']: string } };
+
 type Tag = 'request' | 'response';
 
 function readConfig(): {
@@ -40,6 +41,7 @@ function readConfig(): {
 		types: string,
 	},
 	ignore: {
+		urls: Array<string>,
 		methods: Array<string>,
 		reqContentTypes: Array<string>,
 		resContentTypes: Array<string>,
@@ -89,15 +91,31 @@ function step(
 	};
 }
 
-function apiLog(data: { url: string, method: string, headers: { ['content-type']: string } }, tag: Tag) {
+function apiLog(data: Req, tag: Tag) {
 	console.log(' ');
-	console.log('-'.repeat(90));
-	const table = new Table({
-		head: ['', 'url', 'method', 'content-type'],
-	});
-	table.push([tag, data.url, data.method, data.headers['content-type'] || '']);
-	console.log(table.toString());
-	// console.log('body:', body);
+	if (tag === 'request') {
+		console.log('-'.repeat(90));
+	}
+	log(tag, LogColors.yellow);
+	console.log('url:', data.url);
+	console.log('method:', data.method);
+	console.log('content-type:', data.headers['content-type'] || '');
+}
+
+function ignoreProxy(req: Req, ignoreUrls: string[], ignoreMethods: string[]): boolean {
+	const { url, method } = req;
+
+	for (const ignoreUrl of ignoreUrls) {
+		if (url.indexOf(ignoreUrl) > -1) {
+			return true;
+		}
+	}
+
+	if (ignoreMethods.map((i) => i.toLowerCase()).includes(method.toLowerCase())) {
+		return true;
+	}
+
+	return false;
 }
 
 program
@@ -117,7 +135,7 @@ program
 			return;
 		}
 
-		const { methods: ignoreMethods, reqContentTypes: ignoreReqContentTypes, resContentTypes: ignoreResContentTypes } = ignore;
+		const { methods: ignoreMethods, urls: ignoreUrls, reqContentTypes: ignoreReqContentTypes, resContentTypes: ignoreResContentTypes } = ignore;
 		const { typeFileSavePath, jsonFileSavePath } = mkdirs(filePath.types, filePath.json);
 
 		if (!typeFileSavePath || !jsonFileSavePath) {
@@ -135,17 +153,18 @@ program
 		/**
 		 * 代理请求
 		 */
-		const onProxyReq = (proxyReq, req, res) => {
+		const onProxyReq = (proxyReq, req: Req, res) => {
 			let { url, method } = req;
 			const { typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
 			const typeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.reqparams.interface}`;
 			const contentType = req.headers['content-type'];
 			const typeName = `${interfacePrefixName}ReqparamsI`;
 
-			if (ignoreMethods.map((i) => i.toLowerCase()).includes(method.toLowerCase())) {
+			if (ignoreReqContentTypes.includes(contentType)) {
 				return;
 			}
-			if (ignoreReqContentTypes.includes(contentType)) {
+
+			if (ignoreProxy(req, ignoreUrls, ignoreMethods)) {
 				return;
 			}
 
@@ -206,6 +225,10 @@ program
 				return;
 			}
 
+			if (ignoreProxy(req, ignoreUrls, ignoreMethods)) {
+				return;
+			}
+
 			modifyResponse(res, proxyRes, function (body) {
 				// modify some information
 				// body.age = 2;
@@ -214,10 +237,6 @@ program
 				let { url, method } = req;
 				if (!url || !method) {
 					logError('url或method无效');
-					return body;
-				}
-
-				if (ignoreMethods.map((i) => i.toLowerCase()).includes(method.toLowerCase())) {
 					return body;
 				}
 
