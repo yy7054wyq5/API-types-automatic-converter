@@ -30,6 +30,7 @@ const defaultConfig = {
 		types: './sample/src/api-types',
 	},
 	ignore: {
+		urls: [],
 		methods: ['delete', 'options'],
 		reqContentTypes: [],
 		resContentTypes: ['application/octet-stream'],
