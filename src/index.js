@@ -289,7 +289,7 @@ program
 					let updateContent = typeContent;
 					let tmpTSFilePath = '';
 					if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
-						updateContent = `${oldTypeContent || ''} ${json2Interface(json, typeName + Latest)}`;
+						updateContent = `${oldTypeContent || ''} ${json2Interface(body, typeName + Latest)}`;
 						tmpTSFilePath = creatTmpTSFile(typeFilePath, typeContent);
 					}
 					log('update' + typeFilePath, LogColors.cyanBG);
