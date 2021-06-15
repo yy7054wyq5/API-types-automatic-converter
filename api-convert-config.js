@@ -4,14 +4,14 @@ function differ(params) {
 	const { data, oldData, typeContent, oldTypeContent, schema } = params;
 	const ajv = new Ajv();
 
-	// if (schema && data) {
-	// 	const validate = ajv.compile(schema);
-	// 	const valid = validate(data);
+	if (schema && data) {
+		const validate = ajv.compile(schema);
+		const valid = validate(data);
 
-	// 	if (valid) {
-	// 		return false;
-	// 	}
-	// }
+		if (valid) {
+			return false;
+		}
+	}
 
 	return true;
 }

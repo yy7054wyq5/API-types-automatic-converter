@@ -8,7 +8,7 @@
 		"client": "npx serve ./sample",
 		"init": "npm run build && node ./lib/init.js",
 		"start": "npm run build && node ./lib/index.js -- start",
-		"build": "npm run flow && babel src/ -d lib/ && npm link",
+		"build": "npm run flow && babel src/ -d lib/ ",
 		"cli-demo": "node ./lib/index.js start",
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"git:log": "git log --author='wuyang' --grep='feat'  --all-match  --no-merges --since='2021-06-07 01:00:00' --until='2021-06-11 23:30:00' --pretty=format:' %s %ad ' --date=format:'%Y-%m-%d %H:%M:%S'   > git-log.txt"
