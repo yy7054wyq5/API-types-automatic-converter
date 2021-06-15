@@ -2,6 +2,7 @@
 
 const json2ts = require('json-to-ts');
 const ts2schema = require('typescript-json-schema');
+const fs = require('fs');
 
 const path = require('path');
 const resolve = path.resolve;

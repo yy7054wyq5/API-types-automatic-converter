@@ -120,6 +120,14 @@ function ignoreProxy(req: Req, ignoreUrls: string[], ignoreMethods: string[]): b
 	return false;
 }
 
+function creatTmpTSFile(filePath: string, content: string): string {
+	const newContentFilePath = filePath.split('.ts')[0] + 'tmp' + '.ts';
+	if (content) {
+		fs.writeFileSync(newContentFilePath, content);
+	}
+	return newContentFilePath;
+}
+
 program
 	.command('init')
 	.description('初始化配置')
@@ -279,8 +287,10 @@ program
 						return body;
 					}
 					let updateContent = typeContent;
+					let tmpTSFilePath = '';
 					if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
 						updateContent = `${oldTypeContent || ''} ${json2Interface(json, typeName + Latest)}`;
+						tmpTSFilePath = creatTmpTSFile(typeFilePath, typeContent);
 					}
 					log('update' + typeFilePath, LogColors.cyanBG);
 
@@ -293,7 +303,7 @@ program
 						// 将interface转jsonschema
 						const schemaContent = ts2jsonschema({
 							fileName,
-							filePath: typeFilePath,
+							filePath: tmpTSFilePath || typeFilePath,
 							tsTypeName: typeName,
 						});
 						saveJSON(schemaFilePath, schemaContent).then(() => {});
