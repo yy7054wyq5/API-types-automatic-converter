@@ -10,14 +10,17 @@ vscode-flow-ide: An alternative Flowtype extension for Visual Studio Code. Flowt
 ## 原理
 
 1. 启动一个处于在前端和后端的中间服务器，通过反向代理让请求从该服务器过，从而劫持请求和响应做自动转换的功能。
-2. 支持自定义 differ() 来更新文件，因为接口大多会变化，所以 ts 需要更新，默认是强制更新文件，以最新的 ts 替换原来的。
-3. 请求参数和返回数据都通过 differ() 的返回来决定是否更新，两者的参数略有不同。
+2. 支持自定义 differ() 来更新文件，因为接口大多会变化，所以 ts 需要更新；默认是强制更新文件，以最新的 ts 替换原来的，也可以设置为 append，则会把最新 ts 命名为
+   xxxLatest 的追加到后面；
+3. 请求参数和返回数据都通过 differ() 的返回来决定是否更新，两者的参数略有不同。请求参数通过 differ() 判断时没有 schema 和 oldData
 
-![avatar](./api-converter.png)
+![原理](./api-converter.png)
 
 ## 更新策略
 
 覆盖或追加，见配置的 updateStrategy
+
+![更新策略](./执行逻辑.png)
 
 ## 公司私有 npm 仓库发布地址
 
