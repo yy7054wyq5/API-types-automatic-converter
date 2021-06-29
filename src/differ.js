@@ -17,6 +17,8 @@ export type DifferParams = {
 	schema?: Object,
 };
 
+export type Differ = (params: DifferParams) => boolean;
+
 function differ(params: DifferParams): boolean {
 	const Ajv = require('ajv');
 	const { data, oldData, typeContent, oldTypeContent, schema } = params;

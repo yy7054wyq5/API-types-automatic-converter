@@ -34,8 +34,10 @@ function line2Hump(str: string): string {
 	for (var index = 0; index < strArr.length; index++) {
 		var element = strArr[index];
 		if (element === '-') {
+			if (strArr[index + 1]) {
+				strArr[index + 1] = strArr[index + 1].toUpperCase();
+			}
 			// console.log(element);
-			strArr[index + 1] = strArr[index + 1].toUpperCase();
 		} else if (/^[A-Z]/.test(element) && !hasLine) {
 			strArr[index] = '-' + element.toLowerCase();
 		}

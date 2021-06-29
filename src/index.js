@@ -25,7 +25,7 @@ const ApiTypeFileNameSuffix = require('./suffix-of-file-name.config');
 const { differ } = require('./differ');
 const insideDiffer = differ;
 
-import type { DifferParams } from './differ';
+import type { DifferParams, Differ } from './differ';
 
 type Req = { url: string, method: string, headers: { ['content-type']: string } };
 
@@ -106,17 +106,14 @@ function apiLog(data: Req, tag: Tag) {
 
 function ignoreProxy(req: Req, ignoreUrls: string[], ignoreMethods: string[]): boolean {
 	const { url, method } = req;
-
 	for (const ignoreUrl of ignoreUrls) {
 		if (url.indexOf(ignoreUrl) > -1) {
 			return true;
 		}
 	}
-
 	if (ignoreMethods.map((i) => i.toLowerCase()).includes(method.toLowerCase())) {
 		return true;
 	}
-
 	return false;
 }
 
@@ -126,6 +123,85 @@ function creatTmpTSFile(filePath: string, content: string): string {
 		fs.writeFileSync(newContentFilePath, content);
 	}
 	return newContentFilePath;
+}
+
+function resBodyIsValid(body): boolean {
+	return !body || typeof body !== 'object' || (typeof body === 'object' && !Object.keys(body).length);
+}
+
+function reqParamsTypeContent(options: {
+	_differ: Differ,
+	data: Object,
+	typeName: string,
+	typeFilePath: string,
+	updateStrategy: UpdateStrategy,
+}): string | null {
+	const { typeFilePath, data, typeName, _differ, updateStrategy } = options;
+	const { type: oldTypeContent } = getFileContent(typeFilePath);
+	const typeContent = json2Interface(data, typeName);
+	const canUpdate =
+		(data && !oldTypeContent) ||
+		_differ({
+			data,
+			oldData: null,
+			typeContent,
+			oldTypeContent,
+		});
+	if (!canUpdate) {
+		log(`${typeFilePath} not update`, LogColors.blue);
+		return null;
+	}
+	let updateContent = typeContent;
+	if (oldTypeContent && oldTypeContent.indexOf(Latest) > -1) {
+		updateContent = oldTypeContent;
+		log('latest' + typeFilePath, LogColors.cyanBG);
+	} else if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
+		updateContent = `${oldTypeContent || ''} ${json2Interface(data, typeName + Latest)}`;
+		log('update' + typeFilePath, LogColors.cyanBG);
+	}
+	return updateContent;
+}
+
+function resBodyTypeContent(options: {
+	_differ: Differ,
+	body: Object,
+	typeName: string,
+	typeFilePath: string,
+	jsonFilePath: string,
+	schemaFilePath: string,
+	updateStrategy: UpdateStrategy,
+}): null | { updateContent: string, tmpTSFilePath: string } {
+	const { typeFilePath, jsonFilePath, schemaFilePath, body, typeName, _differ, updateStrategy } = options;
+	const { json, schema, type: oldTypeContent } = getFileContent(typeFilePath, jsonFilePath, schemaFilePath);
+	const typeContent = json2Interface(body, typeName);
+	const canUpdate =
+		(body && !oldTypeContent) ||
+		_differ({
+			data: body,
+			oldData: json,
+			typeContent,
+			oldTypeContent,
+			schema,
+		});
+	if (!canUpdate) {
+		log(`${typeFilePath} not update`, LogColors.blue);
+		return null;
+	}
+	let updateContent = typeContent;
+	let tmpTSFilePath = '';
+	if (oldTypeContent && oldTypeContent.indexOf(Latest) > -1) {
+		updateContent = oldTypeContent;
+		log('latest' + typeFilePath, LogColors.cyanBG);
+	} else if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
+		updateContent = `${oldTypeContent || ''} ${json2Interface(body, typeName + Latest)}`;
+		tmpTSFilePath = creatTmpTSFile(typeFilePath, typeContent);
+		log('update' + typeFilePath, LogColors.cyanBG);
+	}
+
+	return {
+		updateContent,
+		tmpTSFilePath,
+	};
 }
 
 program
@@ -181,30 +257,23 @@ program
 			const doSaveReqParams = (data) => {
 				triggerSaveReqParams = () => {
 					apiLog(req, 'request');
-					const { type: oldTypeContent } = getFileContent(typeFilePath);
-					const typeContent = json2Interface(data, typeName);
-					const canUpdate =
-						(data && !oldTypeContent) ||
-						_differ({
-							data,
-							oldData: null,
-							typeContent,
-							oldTypeContent,
-						});
-					if (!canUpdate) {
-						log(`${typeFilePath} not update`, LogColors.blue);
-						return Promise.resolve();
-					}
-					let updateContent = typeContent;
-					if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
-						updateContent = `${oldTypeContent || ''} ${json2Interface(data, typeName + Latest)}`;
-					}
-					log('update' + typeFilePath, LogColors.cyanBG);
 
-					return saveType({
-						filePath: typeFilePath,
-						content: updateContent,
+					const content = reqParamsTypeContent({
+						data,
+						typeName,
+						typeFilePath,
+						_differ,
+						updateStrategy,
 					});
+
+					if (content) {
+						return saveType({
+							filePath: typeFilePath,
+							content,
+						});
+					}
+
+					return Promise.resolve();
 				};
 			};
 
@@ -263,36 +332,30 @@ program
 					return body;
 				}
 
-				if (!body || (typeof body === 'object' && !Object.keys(body).length)) {
-					logError('请禁用浏览器缓存或检查该请求的响应是否正常，cli无法捕获正常的响应体');
+				if (resBodyIsValid(body)) {
+					logError('请禁用浏览器缓存或检查该请求的响应body是否是对象格式，cli无法捕获正常的响应体');
 					return body;
 				}
 
 				// 将参数的保存置于此处，是为了保证日志按序输出
 				return triggerSaveReqParams().then(() => {
-					const { json, schema, type: oldTypeContent } = getFileContent(typeFilePath, jsonFilePath, schemaFilePath);
 					apiLog({ url, method, headers: proxyRes.headers }, 'response');
-					const typeContent = json2Interface(body, typeName);
-					const canUpdate =
-						(body && !oldTypeContent) ||
-						_differ({
-							data: body,
-							oldData: json,
-							typeContent,
-							oldTypeContent,
-							schema,
-						});
-					if (!canUpdate) {
-						log(`${typeFilePath} not update`, LogColors.blue);
+
+					const res = resBodyTypeContent({
+						body,
+						typeFilePath,
+						typeName,
+						schemaFilePath,
+						jsonFilePath,
+						_differ,
+						updateStrategy,
+					});
+
+					if (!res) {
 						return body;
 					}
-					let updateContent = typeContent;
-					let tmpTSFilePath = '';
-					if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
-						updateContent = `${oldTypeContent || ''} ${json2Interface(body, typeName + Latest)}`;
-						tmpTSFilePath = creatTmpTSFile(typeFilePath, typeContent);
-					}
-					log('update' + typeFilePath, LogColors.cyanBG);
+
+					const { updateContent, tmpTSFilePath } = res;
 
 					saveType({
 						filePath: typeFilePath,
