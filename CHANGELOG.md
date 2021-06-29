@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.7](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/compare/v0.4.6...v0.4.7) (2021-06-29)
+
+
+### Features
+
+* 增加更新策略图 ([18b06f4](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/commit/18b06f44398823cc314e3d316dc2b49bd7a28d65))
+
 ### [0.4.6](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/compare/v0.4.5...v0.4.6) (2021-06-16)
 
 
