@@ -138,6 +138,12 @@ function reqParamsTypeContent(options: {
 }): string | null {
 	const { typeFilePath, data, typeName, _differ, updateStrategy } = options;
 	const { type: oldTypeContent } = getFileContent(typeFilePath);
+
+	if (oldTypeContent && oldTypeContent.indexOf(Latest) > -1) {
+		log('latest: ' + typeFilePath, LogColors.cyanBG);
+		return null;
+	}
+
 	const typeContent = json2Interface(data, typeName);
 	const canUpdate =
 		(data && !oldTypeContent) ||
@@ -152,12 +158,9 @@ function reqParamsTypeContent(options: {
 		return null;
 	}
 	let updateContent = typeContent;
-	if (oldTypeContent && oldTypeContent.indexOf(Latest) > -1) {
-		updateContent = oldTypeContent;
-		log('latest' + typeFilePath, LogColors.cyanBG);
-	} else if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
+	if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
 		updateContent = `${oldTypeContent || ''} ${json2Interface(data, typeName + Latest)}`;
-		log('update' + typeFilePath, LogColors.cyanBG);
+		log('update: ' + typeFilePath, LogColors.cyanBG);
 	}
 	return updateContent;
 }
@@ -173,6 +176,12 @@ function resBodyTypeContent(options: {
 }): null | { updateContent: string, tmpTSFilePath: string } {
 	const { typeFilePath, jsonFilePath, schemaFilePath, body, typeName, _differ, updateStrategy } = options;
 	const { json, schema, type: oldTypeContent } = getFileContent(typeFilePath, jsonFilePath, schemaFilePath);
+
+	if (oldTypeContent && oldTypeContent.indexOf(Latest) > -1) {
+		log('latest: ' + typeFilePath, LogColors.cyanBG);
+		return null;
+	}
+
 	const typeContent = json2Interface(body, typeName);
 	const canUpdate =
 		(body && !oldTypeContent) ||
@@ -189,13 +198,10 @@ function resBodyTypeContent(options: {
 	}
 	let updateContent = typeContent;
 	let tmpTSFilePath = '';
-	if (oldTypeContent && oldTypeContent.indexOf(Latest) > -1) {
-		updateContent = oldTypeContent;
-		log('latest' + typeFilePath, LogColors.cyanBG);
-	} else if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
+	if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
 		updateContent = `${oldTypeContent || ''} ${json2Interface(body, typeName + Latest)}`;
 		tmpTSFilePath = creatTmpTSFile(typeFilePath, typeContent);
-		log('update' + typeFilePath, LogColors.cyanBG);
+		log('update: ' + typeFilePath, LogColors.cyanBG);
 	}
 
 	return {
