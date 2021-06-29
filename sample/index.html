@@ -6,11 +6,17 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>sample</title>
 		<script>
-			function doSth(n) {
-				fetch(`http://localhost:5800/todos/${n}?a=1&b=2&c=1111`, {
-					// headers: {
-					// 	'mock-response': '1',
-					// },
+			function doSth(n, jsonServe) {
+				let url = `http://localhost:5800/todos/${n}?a=1&b=2&c=1111`;
+				if (jsonServe) {
+					url = `https://jsonplaceholder.typicode.com/todos/${n}?a=1&b=2&c=1111`;
+				}
+				fetch(url, {
+					method: 'get',
+					credentials: 'same-origin',
+					headers: {
+						'mock-response': '1',
+					},
 				}).then((res) => {
 					console.log(res);
 				});
@@ -20,5 +26,6 @@
 	</head>
 	<body>
 		<button onclick="doSth(parseInt(Math.random() * 10))">请求</button>
+		<button onclick="doSth(parseInt(Math.random() * 10), true)">请求1</button>
 	</body>
 </html>
