@@ -1,11 +1,7 @@
 # API-types-automatic-converter
 
-代理 API，自动将请求参数和返回数据转为 ts。根据返回数据自动创建 json、[json-schema](https://json-schema.org/)，当给请求头添加 mock-response 并设置一个有效的值时
-，将会把保存的 json 作为返回数据，进而实现 mock 的功能。开发此功能使用了[flow](https://flow.org/en/)作为静态检查工具。
-
-## vscode 插件
-
-vscode-flow-ide: An alternative Flowtype extension for Visual Studio Code. Flowtype is a static type checker ment to find errors in Javascript programs.
+代理 API，自动将请求参数和返回数据转为 ts。使用返回数据自动创建 json、[json-schema](https://json-schema.org/)，当给请求头添加 mock-response 时，将会把保存的
+json 作为返回数据，进而实现 mock 的功能。开发此功能使用了[Typescript](https://www.typescriptlang.org/)作为静态检查工具。
 
 ## 原理
 
@@ -42,7 +38,8 @@ api-convert-cli start // 修改配置文件后启动，将在本地启动一个�
 
 ## 配置说明
 
-\*\*配置中的 proxy 其实就是 http-proxy-middleware 的配置，但 onProxyReq 和 onProxyRes 是无效的，该库就是通过它们来劫持的 API\*\*
+\*\*配置中的 proxy 其实就是 [http-proxy-middleware](https://www.npmjs.com/package/http-proxy-middleware) 的配置，但 onProxyReq 和 onProxyRes 是无效的，该库就是
+通过它们来劫持的 API\*\*
 
 ```js
 function differ(params) {
@@ -71,6 +68,10 @@ module.exports = {
 	ignore: { methods: ['delete', 'options'], reqContentTypes: [], resContentTypes: ['application/octet-stream'] },
 };
 ```
+
+## 已知问题
+
+接口返回的数据是一个数组时，生成的类型定义是数组元素类型而非其数组本身
 
 ## TODO
 

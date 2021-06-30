@@ -330,7 +330,8 @@ program
 				const schemaFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`;
 
 				// mock
-				if (req.headers['mock-response']) {
+				const headers = Object.keys(req.headers);
+				if (headers.includes['mock-response']) {
 					logSuccess('代理响应：返回mock数据');
 					res.statusCode = StatusCodes.OK;
 					try {
