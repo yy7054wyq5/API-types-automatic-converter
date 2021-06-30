@@ -1,15 +1,13 @@
-// @flow
-
-const fs = require('fs');
-const mkdirp = require('mkdirp');
-const { log, LogColors, logSuccess, logError } = require('./log');
+import * as fs from 'fs';
+import * as mkdirp from 'mkdirp';
+import { log, LogColors } from './log';
 
 function firstUpperCase(str: string): string {
 	const [first, ...rest] = str.split('');
 	return first.toUpperCase() + rest.join('');
 }
 
-function getQueryParamsFromUrl(url: string): Object {
+function getQueryParamsFromUrl(url: string): any {
 	const paramsIndex = url.indexOf('?');
 	if (paramsIndex < 1) {
 		return {};
@@ -18,7 +16,7 @@ function getQueryParamsFromUrl(url: string): Object {
 	const arr = str.split('&');
 	const tmp = {};
 	arr.map((item) => {
-		const [key, value] = item.split('=');
+		const [key, value] = item.split('=') as string[];
 		tmp[key] = value;
 	});
 	return tmp;
@@ -28,11 +26,11 @@ function line2Hump(str: string): string {
 	if (!str) {
 		return '';
 	}
-	var strArr = str.split('');
-	var hasLine = str.indexOf('-') > -1;
+	const strArr = str.split('');
+	const hasLine = str.indexOf('-') > -1;
 	// console.log(hasLine);
-	for (var index = 0; index < strArr.length; index++) {
-		var element = strArr[index];
+	for (let index = 0; index < strArr.length; index++) {
+		const element = strArr[index];
 		if (element === '-') {
 			if (strArr[index + 1]) {
 				strArr[index + 1] = strArr[index + 1].toUpperCase();
@@ -48,7 +46,7 @@ function line2Hump(str: string): string {
 	return strArr.join('');
 }
 
-function mkdirs(typeFileSavePath: string, jsonFileSavePath: string): { typeFileSavePath: string | null, jsonFileSavePath: string | null } {
+function mkdirs(typeFileSavePath: string, jsonFileSavePath: string): { typeFileSavePath: string | null; jsonFileSavePath: string | null } {
 	if (!typeFileSavePath || !jsonFileSavePath) {
 		log('请配置文件存放路径：filePath中的json和types', LogColors.redBG);
 		return {
@@ -71,9 +69,9 @@ function getFileContent(
 	jsonFilePath?: string,
 	schemaFilePath?: string
 ): {
-	json: Object | null,
-	schema: Object | null,
-	type: string | null,
+	json: any | null;
+	schema: any | null;
+	type: string | null;
 } {
 	let jsonContent;
 	let jsonSchemaContent;
@@ -82,18 +80,24 @@ function getFileContent(
 	if (jsonFilePath) {
 		try {
 			jsonContent = fs.readFileSync(jsonFilePath);
-		} catch (error) {}
+		} catch (error) {
+			console.log();
+		}
 	}
 
 	if (schemaFilePath) {
 		try {
 			jsonSchemaContent = fs.readFileSync(schemaFilePath);
-		} catch (error) {}
+		} catch (error) {
+			console.log();
+		}
 	}
 
 	try {
 		typeFileContent = fs.readFileSync(typeFilePath);
-	} catch (error) {}
+	} catch (error) {
+		console.log();
+	}
 
 	const oldJson = jsonContent ? JSON.parse(jsonContent.toString()) : null;
 	const oldSchema = jsonSchemaContent ? JSON.parse(jsonSchemaContent.toString()) : null;
@@ -105,5 +109,5 @@ function getFileContent(
 	};
 }
 
-module.exports = { line2Hump, getQueryParamsFromUrl, firstUpperCase, mkdirs, getFileContent };
+export { line2Hump, getQueryParamsFromUrl, firstUpperCase, mkdirs, getFileContent };
 // console.log(getQueryParamsFromUrl('djada?a=2&djjajda=djadjas'));

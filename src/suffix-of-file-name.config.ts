@@ -1,4 +1,4 @@
-module.exports = {
+const ApiTypeFileNameSuffix = {
 	resbody: {
 		json: 'resbody.json',
 		interface: 'resbody.interface.ts',
@@ -8,3 +8,5 @@ module.exports = {
 		interface: 'reqparams.interface.ts',
 	},
 };
+
+export { ApiTypeFileNameSuffix };

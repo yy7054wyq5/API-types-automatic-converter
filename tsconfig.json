@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"allowSyntheticDefaultImports": true,
+		"noImplicitAny": false,
+		"noImplicitReturns": true,
+		"module": "Commonjs",
+		"target": "es5",
+		"allowJs": true,
+		"outDir": "dist",
+		"declaration": true,
+		"baseUrl": ".",
+		"moduleResolution": "Node",
+		"paths": {
+			"json-to-ts": ["node_modules/json-to-ts/build/src"],
+			"typescript-json-schema": ["node_modules/typescript-json-schema/dist"]
+		}
+	},
+	"include": ["./src"]
+}
