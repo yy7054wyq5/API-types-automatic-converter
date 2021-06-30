@@ -1,7 +1,7 @@
 {
-  "name": "my-webpack-project",
-  "version": "1.0.0",
-  "description": "My webpack project",
+  "name": "api-types-automatic-converter",
+  "version": "0.4.7",
+  "description": "Automatic convert request params and response body of API",
   "main": "index.js",
   "scripts": {
     "client": "npx serve ./sample",
