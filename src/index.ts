@@ -330,12 +330,16 @@ program
 				const schemaFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`;
 
 				// mock
-				const headers = Object.keys(req.headers);
-				if (headers.includes['mock-response']) {
+				const reqHeaders = Object.keys(req.headers).join(',');
+				if (reqHeaders.indexOf('mock-response') > -1) {
+					apiLog({ url, method, headers: proxyRes.headers }, 'response');
 					logSuccess('代理响应：返回mock数据');
 					res.statusCode = StatusCodes.OK;
 					try {
-						return JSON.parse(fs.readFileSync(jsonFilePath).toString());
+						const mockStr = fs.readFileSync(jsonFilePath).toString();
+						const mockData = JSON.parse(mockStr);
+						console.log(mockStr);
+						return mockData;
 					} catch (error) {
 						console.log();
 					}
