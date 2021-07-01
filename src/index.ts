@@ -7,25 +7,22 @@ import * as http from 'http';
 import * as express from 'express';
 import { program } from 'commander';
 import { StatusCodes } from 'http-status-codes';
-import * as modifyResponse from 'node-http-proxy-json';
+import modifyResponse = require('node-http-proxy-json');
 import { createProxyMiddleware, Options } from 'http-proxy-middleware';
 import { init, ConfigPath } from './init';
 import type { UpdateStrategy } from './init';
 import { saveJSON, saveType } from './save';
-import { json2Interface, ts2jsonschema } from './converter';
+import { ts2jsonschema } from './converter';
 import { log, LogColors, logSuccess, logError } from './log';
-import { firstUpperCase, line2Hump, getQueryParamsFromUrl, getFileContent, mkdirs } from './utils';
+import { firstUpperCase, line2Hump, getQueryParamsFromUrl, mkdirs } from './utils';
 import { ApiTypeFileNameSuffix } from './suffix-of-file-name.config';
 import { differ } from './differ';
 const insideDiffer = differ;
-import type { DifferParams, Differ } from './differ';
+import type { DifferParams } from './differ';
+import { getReqParamsTypeContent, getResBodyTypeContent } from './API-content';
+import anyBody = require('body/any');
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const anyBody = require('body/any'); // 使用import，tsc转换后会默认加上anyBody.default，导致用不了
-
-type Tag = 'request' | 'response';
-
-const Latest = 'Latest';
+type Tag = 'request' | 'response' | 'mock';
 
 interface Config {
 	port: number;
@@ -92,7 +89,7 @@ function step(
 
 function apiLog(data: express.Request | http.IncomingMessage, tag: Tag) {
 	console.log(' ');
-	if (tag === 'request') {
+	if (tag !== 'response') {
 		console.log('-'.repeat(90));
 	}
 	log(tag, LogColors.yellow);
@@ -114,97 +111,17 @@ function ignoreProxy(req: express.Request, ignoreUrls: string[], ignoreMethods: 
 	return false;
 }
 
-function creatTmpTSFile(filePath: string, content: string): string {
-	const newContentFilePath = filePath.split('.ts')[0] + '.tmp' + '.ts';
-	if (content) {
-		fs.writeFileSync(newContentFilePath, content);
+function validateDataBeforeConvert(body: unknown): boolean {
+	if (!body) {
+		return false;
 	}
-	return newContentFilePath;
-}
-
-function resBodyIsValid(body: unknown): boolean {
-	return !body || typeof body !== 'object' || (typeof body === 'object' && !Object.keys(body).length);
-}
-
-function reqParamsTypeContent(options: {
-	_differ: Differ;
-	data: unknown;
-	typeName: string;
-	typeFilePath: string;
-	updateStrategy: UpdateStrategy;
-}): string | null {
-	const { typeFilePath, data, typeName, _differ, updateStrategy } = options;
-	const { type: oldTypeContent } = getFileContent(typeFilePath);
-
-	if (oldTypeContent && oldTypeContent.indexOf(Latest) > -1) {
-		log('latest: ' + typeFilePath, LogColors.cyanBG);
-		return null;
+	if (typeof body !== 'object') {
+		return false;
 	}
-
-	const typeContent = json2Interface(data, typeName);
-	const canUpdate =
-		(data && !oldTypeContent) ||
-		_differ({
-			data,
-			oldData: null,
-			typeContent,
-			oldTypeContent,
-		});
-	if (!canUpdate) {
-		log(`${typeFilePath} not update`, LogColors.blue);
-		return null;
+	if (typeof body === 'object' && !Object.keys(body).length) {
+		return false;
 	}
-	let updateContent = typeContent;
-	if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
-		updateContent = `${oldTypeContent || ''} ${json2Interface(data, typeName + Latest)}`;
-		log('update: ' + typeFilePath, LogColors.cyanBG);
-	}
-	return updateContent;
-}
-
-function resBodyTypeContent(options: {
-	_differ: Differ;
-	body: unknown;
-	typeName: string;
-	typeFilePath: string;
-	jsonFilePath: string;
-	schemaFilePath: string;
-	updateStrategy: UpdateStrategy;
-}): null | { updateContent: string; tmpTSFilePath: string } {
-	const { typeFilePath, jsonFilePath, schemaFilePath, body, typeName, _differ, updateStrategy } = options;
-	const { json, schema, type: oldTypeContent } = getFileContent(typeFilePath, jsonFilePath, schemaFilePath);
-
-	if (oldTypeContent && oldTypeContent.indexOf(Latest) > -1) {
-		log('latest: ' + typeFilePath, LogColors.cyanBG);
-		return null;
-	}
-
-	const typeContent = json2Interface(body, typeName);
-	const canUpdate =
-		(body && !oldTypeContent) ||
-		_differ({
-			data: body,
-			oldData: json,
-			typeContent,
-			oldTypeContent,
-			schema,
-		});
-	if (!canUpdate) {
-		log(`${typeFilePath} not update`, LogColors.blue);
-		return null;
-	}
-	let updateContent = typeContent;
-	let tmpTSFilePath = '';
-	if (updateStrategy === 'append' && oldTypeContent && oldTypeContent.indexOf(Latest) === -1) {
-		updateContent = `${oldTypeContent || ''} ${json2Interface(body, typeName + Latest)}`;
-		tmpTSFilePath = creatTmpTSFile(typeFilePath, typeContent);
-		log('update: ' + typeFilePath, LogColors.cyanBG);
-	}
-
-	return {
-		updateContent,
-		tmpTSFilePath,
-	};
+	return true;
 }
 
 program
@@ -260,12 +177,16 @@ program
 			const doSaveReqParams = (data: unknown) => {
 				triggerSaveReqParams = () => {
 					apiLog(req, 'request');
+					if (!validateDataBeforeConvert(data)) {
+						log('请求参数或请求体无效', LogColors.blue);
+						return Promise.resolve();
+					}
 
-					const content = reqParamsTypeContent({
+					const content = getReqParamsTypeContent({
 						data,
 						typeName,
 						typeFilePath,
-						_differ,
+						differ: _differ,
 						updateStrategy,
 					});
 
@@ -287,7 +208,7 @@ program
 			}
 			anyBody(req, function (err: unknown, body: unknown) {
 				if (err) {
-					logError('发生错误');
+					logError('解析请求体发生错误');
 					logError(err);
 					return;
 				}
@@ -328,8 +249,8 @@ program
 				// mock
 				const reqHeaders = Object.keys(req.headers).join(',');
 				if (reqHeaders.indexOf('mock-response') > -1) {
-					apiLog(proxyRes, 'response');
-					logSuccess('代理响应：返回mock数据');
+					apiLog(req, 'mock');
+					logSuccess('返回mock数据');
 					res.statusCode = StatusCodes.OK;
 					try {
 						const mockStr = fs.readFileSync(jsonFilePath).toString();
@@ -342,22 +263,21 @@ program
 					return body;
 				}
 
-				if (resBodyIsValid(body)) {
-					logError('请禁用浏览器缓存或检查该请求的响应body是否是对象格式，cli无法捕获正常的响应体');
+				if (!validateDataBeforeConvert(body)) {
+					logError('请禁用浏览器缓存或检查该请求的响应body是否是对象格式，cli无法捕获正常的响应体，该请求的转换已终止');
 					return body;
 				}
 
 				// 将参数的保存置于此处，是为了保证日志按序输出
 				return triggerSaveReqParams().then(() => {
 					apiLog(proxyRes, 'response');
-
-					const result = resBodyTypeContent({
+					const result = getResBodyTypeContent({
 						body,
 						typeFilePath,
 						typeName,
 						schemaFilePath,
 						jsonFilePath,
-						_differ,
+						differ: _differ,
 						updateStrategy,
 					});
 
@@ -365,7 +285,7 @@ program
 						return body;
 					}
 
-					const { updateContent, tmpTSFilePath } = result;
+					const { updateContent, latestTypeContentFilePath } = result;
 
 					saveType({
 						filePath: typeFilePath,
@@ -376,11 +296,11 @@ program
 						// 将interface转jsonschema
 						const schemaContent = ts2jsonschema({
 							fileName,
-							filePath: tmpTSFilePath || typeFilePath,
+							filePath: latestTypeContentFilePath || typeFilePath,
 							tsTypeName: typeName,
 						});
 						saveJSON(schemaFilePath, schemaContent).then(() => {
-							fs.unlinkSync(tmpTSFilePath);
+							fs.unlinkSync(latestTypeContentFilePath);
 						});
 					});
 

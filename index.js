@@ -1,3 +1,3 @@
-module.exports = {
-	...require('./lib/converter'),
+exports = {
+	...require('./dist/converter'),
 };
