@@ -6,6 +6,7 @@ const DefaultApiUrl = 'https://jsonplaceholder.typicode.com';
 
 import { differ } from './differ';
 import * as childProcess from 'child_process';
+import type { Options } from 'http-proxy-middleware';
 
 export type UpdateStrategy = 'cover' | 'append';
 
@@ -17,18 +18,18 @@ const defaultConfig = {
 		},
 		changeOrigin: true,
 		secure: false,
-	},
+	} as Options,
 	differ, // for update
-	updateStrategy: 'cover', // 'cover' | 'append'
+	updateStrategy: 'cover' as UpdateStrategy, // 'cover' | 'append'
 	port: 5800,
 	filePath: {
 		json: './sample/assets/api-json',
 		types: './sample/src/api-types',
 	},
 	ignore: {
-		urls: [],
-		methods: ['delete', 'options'],
-		reqContentTypes: [],
+		urls: [] as string[],
+		methods: ['delete', 'options'] as string[],
+		reqContentTypes: [] as string[],
 		resContentTypes: ['application/octet-stream'],
 	},
 };

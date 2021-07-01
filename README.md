@@ -3,6 +3,10 @@
 代理 API，自动将请求参数和返回数据转为 ts。使用返回数据自动创建 json、[json-schema](https://json-schema.org/)，当给请求头添加 mock-response 时，将会把保存的
 json 作为返回数据，进而实现 mock 的功能。开发此功能使用了[Typescript](https://www.typescriptlang.org/)作为静态检查工具。
 
+## 类型检查
+
+用 tsc 编译 ts 并会检查类型，使用的 tsconfig.json 的配置；eslint 用的是.eslintrc.js，只会检查代码结构和样式
+
 ## 原理
 
 1. 启动一个处于在前端和后端的中间服务器，通过反向代理让请求从该服务器过，从而劫持请求和响应做自动转换的功能。

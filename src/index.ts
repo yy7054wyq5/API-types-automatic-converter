@@ -3,11 +3,12 @@
 import * as nodeModule from 'module';
 import * as fs from 'fs';
 import * as vm from 'vm';
+import * as http from 'http';
 import * as express from 'express';
 import { program } from 'commander';
 import { StatusCodes } from 'http-status-codes';
 import * as modifyResponse from 'node-http-proxy-json';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import { createProxyMiddleware, Options } from 'http-proxy-middleware';
 import { init, ConfigPath } from './init';
 import type { UpdateStrategy } from './init';
 import { saveJSON, saveType } from './save';
@@ -19,11 +20,8 @@ import { differ } from './differ';
 const insideDiffer = differ;
 import type { DifferParams, Differ } from './differ';
 
-interface Req {
-	url: string;
-	method: string;
-	headers: { ['content-type']: string };
-}
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const anyBody = require('body/any'); // 使用import，tsc转换后会默认加上anyBody.default，导致用不了
 
 type Tag = 'request' | 'response';
 
@@ -92,7 +90,7 @@ function step(
 	};
 }
 
-function apiLog(data: Req, tag: Tag) {
+function apiLog(data: express.Request | http.IncomingMessage, tag: Tag) {
 	console.log(' ');
 	if (tag === 'request') {
 		console.log('-'.repeat(90));
@@ -103,7 +101,7 @@ function apiLog(data: Req, tag: Tag) {
 	console.log('content-type:', data.headers['content-type'] || '');
 }
 
-function ignoreProxy(req: Req, ignoreUrls: string[], ignoreMethods: string[]): boolean {
+function ignoreProxy(req: express.Request, ignoreUrls: string[], ignoreMethods: string[]): boolean {
 	const { url, method } = req;
 	for (const ignoreUrl of ignoreUrls) {
 		if (url.indexOf(ignoreUrl) > -1) {
@@ -124,7 +122,7 @@ function creatTmpTSFile(filePath: string, content: string): string {
 	return newContentFilePath;
 }
 
-function resBodyIsValid(body): boolean {
+function resBodyIsValid(body: unknown): boolean {
 	return !body || typeof body !== 'object' || (typeof body === 'object' && !Object.keys(body).length);
 }
 
@@ -244,7 +242,7 @@ program
 		/**
 		 * 代理请求
 		 */
-		const onProxyReq = (proxyReq, req: Req, res) => {
+		const onProxyReq = (proxyReq: http.ClientRequest, req: express.Request) => {
 			const { url, method } = req;
 			const { typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
 			const typeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.reqparams.interface}`;
@@ -259,7 +257,7 @@ program
 				return;
 			}
 
-			const doSaveReqParams = (data) => {
+			const doSaveReqParams = (data: unknown) => {
 				triggerSaveReqParams = () => {
 					apiLog(req, 'request');
 
@@ -287,22 +285,20 @@ program
 				doSaveReqParams(params);
 				return;
 			}
-			import('body/any').then((parsingBody) => {
-				parsingBody(req, res, function (err, body) {
-					if (err) {
-						logError('发生错误');
-						logError(err);
-						return;
-					}
-					doSaveReqParams(body);
-				});
+			anyBody(req, function (err: unknown, body: unknown) {
+				if (err) {
+					logError('发生错误');
+					logError(err);
+					return;
+				}
+				doSaveReqParams(body);
 			});
 		};
 
 		/**
 		 * 代理响应
 		 */
-		const onProxyRes = (proxyRes, req, res) => {
+		const onProxyRes = (proxyRes: http.IncomingMessage, req: express.Request, res: express.Response) => {
 			const responseContentType = proxyRes.headers['content-type'];
 			if (ignoreResContentTypes.includes(responseContentType)) {
 				return;
@@ -312,7 +308,7 @@ program
 				return;
 			}
 
-			modifyResponse(res, proxyRes, function (body) {
+			modifyResponse(res, proxyRes, function (body: unknown) {
 				// modify some information
 				// body.age = 2;
 				// delete body.version;
@@ -332,7 +328,7 @@ program
 				// mock
 				const reqHeaders = Object.keys(req.headers).join(',');
 				if (reqHeaders.indexOf('mock-response') > -1) {
-					apiLog({ url, method, headers: proxyRes.headers }, 'response');
+					apiLog(proxyRes, 'response');
 					logSuccess('代理响应：返回mock数据');
 					res.statusCode = StatusCodes.OK;
 					try {
@@ -353,9 +349,9 @@ program
 
 				// 将参数的保存置于此处，是为了保证日志按序输出
 				return triggerSaveReqParams().then(() => {
-					apiLog({ url, method, headers: proxyRes.headers }, 'response');
+					apiLog(proxyRes, 'response');
 
-					const res = resBodyTypeContent({
+					const result = resBodyTypeContent({
 						body,
 						typeFilePath,
 						typeName,
@@ -365,20 +361,18 @@ program
 						updateStrategy,
 					});
 
-					if (!res) {
+					if (!result) {
 						return body;
 					}
 
-					const { updateContent, tmpTSFilePath } = res;
+					const { updateContent, tmpTSFilePath } = result;
 
 					saveType({
 						filePath: typeFilePath,
 						content: updateContent,
 					}).then(() => {
 						// 保存data
-						saveJSON(jsonFilePath, JSON.stringify(body)).then(() => {
-							console.log();
-						});
+						saveJSON(jsonFilePath, JSON.stringify(body));
 						// 将interface转jsonschema
 						const schemaContent = ts2jsonschema({
 							fileName,
@@ -395,13 +389,13 @@ program
 			});
 		};
 
-		const PROXY_CONFIG = {
+		const PROXY_CONFIG: Options = {
 			...proxy,
 			onProxyReq,
 			onProxyRes,
 		};
 
-		const app = express();
+		const app: express.Application = express();
 		const apiProxy = createProxyMiddleware(PROXY_CONFIG);
 		app.use(function (req, res, next) {
 			next();

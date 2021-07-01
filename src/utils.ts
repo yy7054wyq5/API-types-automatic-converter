@@ -7,14 +7,14 @@ function firstUpperCase(str: string): string {
 	return first.toUpperCase() + rest.join('');
 }
 
-function getQueryParamsFromUrl(url: string): any {
+function getQueryParamsFromUrl(url: string): Record<string, string> {
 	const paramsIndex = url.indexOf('?');
 	if (paramsIndex < 1) {
 		return {};
 	}
 	const str = url.substring(paramsIndex + 1, url.length);
 	const arr = str.split('&');
-	const tmp = {};
+	const tmp: Record<string, string> = {};
 	arr.map((item) => {
 		const [key, value] = item.split('=') as string[];
 		tmp[key] = value;
