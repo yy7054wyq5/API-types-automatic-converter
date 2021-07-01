@@ -1,27 +1,20 @@
 module.exports = {
 	env: {
-		es6: true,
-		node: true,
+		browser: false,
+		commonjs: true,
+		es2021: true,
 	},
-	extends: ['plugin:flowtype/recommended'],
-	plugins: ['flowtype'],
-	globals: {
-		Atomics: 'readonly',
-		SharedArrayBuffer: 'readonly',
-	},
+	extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
+	parser: '@typescript-eslint/parser',
 	parserOptions: {
-		ecmaVersion: 11,
-		sourceType: 'module',
+		ecmaVersion: 12,
 	},
+	plugins: ['@typescript-eslint'],
 	rules: {
-		'indent': ['error', 'tab'],
-		'linebreak-style': ['error', 'unix'],
-		'quotes': ['error', 'single'],
-		'semi': ['error', 'always'],
+		'no-explicit-any': 0,
+		'no-undef': 1,
 	},
-	settings: {
-		flowtype: {
-			onlyFilesWithFlowAnnotation: true,
-		},
+	globals: {
+		console: true,
 	},
 };

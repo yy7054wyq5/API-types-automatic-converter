@@ -1,15 +1,11 @@
-// @flow
+import * as fs from 'fs';
 
-const fs = require('fs');
-
-// node --experimental-modules ./lib/init.js
-// 14.16.1 可以不写 --experimental-modules
-
+// TODO: 接受 ts 配置文件
 const ConfigPath = './api-convert-config.js';
 const DefaultApiUrl = 'https://jsonplaceholder.typicode.com';
 
-const { differ } = require('./differ');
-const child_process = require('child_process');
+import { differ } from './differ';
+import * as childProcess from 'child_process';
 
 export type UpdateStrategy = 'cover' | 'append';
 
@@ -37,21 +33,19 @@ const defaultConfig = {
 	},
 };
 
-function init() {
+function init(): void {
 	let configContent = JSON.stringify(defaultConfig); // 该方法会把函数丢弃
 	configContent = configContent.replace('{', '{ differ,'); // 把函数补上
 	const content = `
 		${differ.toString()}
 		module.exports = ${configContent};
 	`;
-	fs.writeFile(ConfigPath, content, () => {});
-	child_process.exec(`prettier --config ./.prettierrc.json --write ${ConfigPath}`);
+	fs.writeFile(ConfigPath, content, () => {
+		console.log();
+	});
+	childProcess.exec(`prettier --config ./.prettierrc.json --write ${ConfigPath}`);
 }
 
 // init();
 
-module.exports = {
-	init,
-	DefaultApiUrl,
-	ConfigPath,
-};
+export { init, DefaultApiUrl, ConfigPath };

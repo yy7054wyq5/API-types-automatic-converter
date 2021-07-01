@@ -1,5 +1,3 @@
-// @flow
-
 // https://blog.csdn.net/guang_s/article/details/90380581
 const LogColors = {
 	bright: '\x1B[1m', // 亮色
@@ -26,7 +24,7 @@ const LogColors = {
 	whiteBG: '\x1B[47m', // 背景色为白色
 };
 
-function log(msg: string | Object, color: string): void {
+function log(msg: string | any, color: string): void {
 	if (typeof msg === 'object' && Object.keys(msg).length) {
 		try {
 			console.log(`${color}${JSON.stringify(msg)}\x1B[0m`);
@@ -37,17 +35,12 @@ function log(msg: string | Object, color: string): void {
 	console.log(`${color}${msg}\x1B[0m`);
 }
 
-function logSuccess(msg: string | Object): void {
+function logSuccess(msg: string | any): void {
 	log(msg, LogColors.yellow);
 }
 
-function logError(msg: string | Object) {
+function logError(msg: string | any): void {
 	log(msg, LogColors.red);
 }
 
-module.exports = {
-	LogColors,
-	log,
-	logSuccess,
-	logError,
-};
+export { LogColors, log, logSuccess, logError };

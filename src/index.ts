@@ -1,56 +1,54 @@
 #!/usr/bin/env node
 
-// @flow
-
-// $FlowFixMe
-const nodeModule = require('module');
-
-const fs = require('fs');
-const vm = require('vm');
-const express = require('express');
-const program = require('commander');
-const parsingBody = require('body/any');
-const child_process = require('child_process');
-const { StatusCodes } = require('http-status-codes');
-const modifyResponse = require('node-http-proxy-json');
-const { createProxyMiddleware } = require('http-proxy-middleware');
-
-const { init, ConfigPath, DefaultApiUrl } = require('./init');
+import * as nodeModule from 'module';
+import * as fs from 'fs';
+import * as vm from 'vm';
+import * as express from 'express';
+import { program } from 'commander';
+import { StatusCodes } from 'http-status-codes';
+import * as modifyResponse from 'node-http-proxy-json';
+import { createProxyMiddleware } from 'http-proxy-middleware';
+import { init, ConfigPath } from './init';
 import type { UpdateStrategy } from './init';
-const { saveJSON, saveType } = require('./save');
-const { json2Interface, ts2jsonschema } = require('./converter');
-const { log, LogColors, logSuccess, logError } = require('./log');
-const { firstUpperCase, line2Hump, getQueryParamsFromUrl, getFileContent, mkdirs } = require('./utils');
-const ApiTypeFileNameSuffix = require('./suffix-of-file-name.config');
-const { differ } = require('./differ');
+import { saveJSON, saveType } from './save';
+import { json2Interface, ts2jsonschema } from './converter';
+import { log, LogColors, logSuccess, logError } from './log';
+import { firstUpperCase, line2Hump, getQueryParamsFromUrl, getFileContent, mkdirs } from './utils';
+import { ApiTypeFileNameSuffix } from './suffix-of-file-name.config';
+import { differ } from './differ';
 const insideDiffer = differ;
-
 import type { DifferParams, Differ } from './differ';
 
-type Req = { url: string, method: string, headers: { ['content-type']: string } };
+interface Req {
+	url: string;
+	method: string;
+	headers: { ['content-type']: string };
+}
 
 type Tag = 'request' | 'response';
 
 const Latest = 'Latest';
 
-function readConfig(): {
-	port: number,
-	proxy: Object,
-	updateStrategy: UpdateStrategy,
-	differ: null | ((params: DifferParams) => boolean),
+interface Config {
+	port: number;
+	proxy: { target: string };
+	updateStrategy: UpdateStrategy;
+	differ: null | ((params: DifferParams) => boolean);
 	filePath: {
-		json: string,
-		types: string,
-	},
+		json: string;
+		types: string;
+	};
 	ignore: {
-		urls: Array<string>,
-		methods: Array<string>,
-		reqContentTypes: Array<string>,
-		resContentTypes: Array<string>,
-	},
-} {
+		urls: Array<string>;
+		methods: Array<string>;
+		reqContentTypes: Array<string>;
+		resContentTypes: Array<string>;
+	};
+}
+
+function readConfig(): Config {
 	const content = fs.readFileSync(ConfigPath);
-	const getModuleFromFile = (bundle, filename) => {
+	const getModuleFromFile = (bundle: string, filename: string) => {
 		const m = { exports: {} };
 
 		const wrapper = nodeModule.wrap(bundle);
@@ -62,18 +60,19 @@ function readConfig(): {
 		result.call(m.exports, m.exports, require, m); // 执行wrapper函数，此处传入require就解决了第一种方法不能require的问题
 		return m;
 	};
-	return getModuleFromFile(content, 'api-convert-config.js').exports;
+	return getModuleFromFile(content.toString(), 'api-convert-config.js').exports as Config;
 }
 
 function step(
-	req: Object,
+	req: { method: string; url: string },
 	typeFileSavePath: string
 ): {
-	fileName: string,
-	interfacePrefixName: string,
-	typeFileSavePathHead: string,
+	fileName: string;
+	interfacePrefixName: string;
+	typeFileSavePathHead: string;
 } {
-	let { url, method } = req;
+	let { method } = req;
+	const url = req.url;
 	method = method.toLowerCase(); // 方法名转小写
 	let api = url;
 	const urlParamsIndex = api.indexOf('?');
@@ -130,11 +129,11 @@ function resBodyIsValid(body): boolean {
 }
 
 function reqParamsTypeContent(options: {
-	_differ: Differ,
-	data: Object,
-	typeName: string,
-	typeFilePath: string,
-	updateStrategy: UpdateStrategy,
+	_differ: Differ;
+	data: unknown;
+	typeName: string;
+	typeFilePath: string;
+	updateStrategy: UpdateStrategy;
 }): string | null {
 	const { typeFilePath, data, typeName, _differ, updateStrategy } = options;
 	const { type: oldTypeContent } = getFileContent(typeFilePath);
@@ -166,14 +165,14 @@ function reqParamsTypeContent(options: {
 }
 
 function resBodyTypeContent(options: {
-	_differ: Differ,
-	body: Object,
-	typeName: string,
-	typeFilePath: string,
-	jsonFilePath: string,
-	schemaFilePath: string,
-	updateStrategy: UpdateStrategy,
-}): null | { updateContent: string, tmpTSFilePath: string } {
+	_differ: Differ;
+	body: unknown;
+	typeName: string;
+	typeFilePath: string;
+	jsonFilePath: string;
+	schemaFilePath: string;
+	updateStrategy: UpdateStrategy;
+}): null | { updateContent: string; tmpTSFilePath: string } {
 	const { typeFilePath, jsonFilePath, schemaFilePath, body, typeName, _differ, updateStrategy } = options;
 	const { json, schema, type: oldTypeContent } = getFileContent(typeFilePath, jsonFilePath, schemaFilePath);
 
@@ -246,7 +245,7 @@ program
 		 * 代理请求
 		 */
 		const onProxyReq = (proxyReq, req: Req, res) => {
-			let { url, method } = req;
+			const { url, method } = req;
 			const { typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
 			const typeFilePath = `${typeFileSavePathHead}.${ApiTypeFileNameSuffix.reqparams.interface}`;
 			const contentType = req.headers['content-type'];
@@ -288,13 +287,15 @@ program
 				doSaveReqParams(params);
 				return;
 			}
-			parsingBody(req, res, function (err, body) {
-				if (err) {
-					logError('发生错误');
-					logError(err);
-					return;
-				}
-				doSaveReqParams(body);
+			import('body/any').then((parsingBody) => {
+				parsingBody(req, res, function (err, body) {
+					if (err) {
+						logError('发生错误');
+						logError(err);
+						return;
+					}
+					doSaveReqParams(body);
+				});
 			});
 		};
 
@@ -316,7 +317,7 @@ program
 				// body.age = 2;
 				// delete body.version;
 
-				let { url, method } = req;
+				const { url, method } = req;
 				if (!url || !method) {
 					logError('url或method无效');
 					return body;
@@ -329,12 +330,19 @@ program
 				const schemaFilePath = `${jsonFileSavePath}/${fileName}.${ApiTypeFileNameSuffix.resbody.jsonschema}`;
 
 				// mock
-				if (req.headers['mock-response']) {
+				const reqHeaders = Object.keys(req.headers).join(',');
+				if (reqHeaders.indexOf('mock-response') > -1) {
+					apiLog({ url, method, headers: proxyRes.headers }, 'response');
 					logSuccess('代理响应：返回mock数据');
 					res.statusCode = StatusCodes.OK;
 					try {
-						return JSON.parse(fs.readFileSync(jsonFilePath).toString());
-					} catch (error) {}
+						const mockStr = fs.readFileSync(jsonFilePath).toString();
+						const mockData = JSON.parse(mockStr);
+						console.log(mockStr);
+						return mockData;
+					} catch (error) {
+						console.log();
+					}
 					return body;
 				}
 
@@ -368,7 +376,9 @@ program
 						content: updateContent,
 					}).then(() => {
 						// 保存data
-						saveJSON(jsonFilePath, JSON.stringify(body)).then(() => {});
+						saveJSON(jsonFilePath, JSON.stringify(body)).then(() => {
+							console.log();
+						});
 						// 将interface转jsonschema
 						const schemaContent = ts2jsonschema({
 							fileName,

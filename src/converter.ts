@@ -1,12 +1,8 @@
-// @flow
-
-const json2ts = require('json-to-ts');
-const ts2schema = require('typescript-json-schema');
-const fs = require('fs');
-
-const path = require('path');
+import * as json2ts from 'json-to-ts';
+import * as TJS from 'typescript-json-schema';
+import * as path from 'path';
 const resolve = path.resolve;
-const { logError } = require('./log');
+import { logError } from './log';
 
 function putInterfaceName(sourceStr: string, interfaceName: string): string {
 	let editedStr = sourceStr;
@@ -14,7 +10,7 @@ function putInterfaceName(sourceStr: string, interfaceName: string): string {
 	return editedStr.replace(/interface RootObject/, `export interface ${interfaceName}`); // 重写接口
 }
 
-function json2Interface(data: Object, interfaceName: string): string {
+function json2Interface(data: unknown, interfaceName: string): string {
 	if (!data) {
 		return '';
 	}
@@ -28,7 +24,7 @@ function json2Interface(data: Object, interfaceName: string): string {
 	}
 }
 
-function ts2jsonschema(options: { filePath: string, tsTypeName: string, fileName: string }): string {
+function ts2jsonschema(options: { filePath: string; tsTypeName: string; fileName: string }): string {
 	const { filePath, fileName, tsTypeName } = options;
 	// optionally pass argument to schema generator
 	const settings = {
@@ -41,14 +37,11 @@ function ts2jsonschema(options: { filePath: string, tsTypeName: string, fileName
 	};
 	// optionally pass a base path
 	const basePath = './';
-	const program = ts2schema.getProgramFromFiles([resolve(filePath)], compilerOptions, basePath);
+	const program = TJS.getProgramFromFiles([resolve(filePath)], compilerOptions, basePath);
 	// We can either get the schema for one file and one type...
-	let schema = ts2schema.generateSchema(program, tsTypeName, settings);
+	const schema = TJS.generateSchema(program, tsTypeName, settings);
 	schema.$id = fileName;
 	return JSON.stringify(schema);
 }
 
-module.exports = {
-	json2Interface,
-	ts2jsonschema,
-};
+export { json2Interface, ts2jsonschema };
