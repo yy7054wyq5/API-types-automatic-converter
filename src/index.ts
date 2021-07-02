@@ -22,11 +22,11 @@ import type { DifferParams } from './differ';
 import { getReqParamsTypeContent, getResBodyTypeContent } from './API-content';
 import anyBody = require('body/any');
 
-type Tag = 'request' | 'response' | 'mock';
+type Tag = 'request' | 'response' | 'mock' | 'invalidResponseBody';
 
 interface Config {
 	port: number;
-	proxy: { target: string };
+	proxy: Options;
 	updateStrategy: UpdateStrategy;
 	differ: null | ((params: DifferParams) => boolean);
 	filePath: {
@@ -264,6 +264,7 @@ program
 				}
 
 				if (!validateDataBeforeConvert(body)) {
+					apiLog(req, 'invalidResponseBody');
 					logError('请禁用浏览器缓存或检查该请求的响应body是否是对象格式，cli无法捕获正常的响应体，该请求的转换已终止');
 					return body;
 				}

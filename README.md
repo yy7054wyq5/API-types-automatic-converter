@@ -20,7 +20,7 @@ json 作为返回数据，进而实现 mock 的功能。开发此功能使用了
 
 覆盖或追加，见配置的 updateStrategy
 
-![更新策略](./执行逻辑.png)
+![更新策略](./update-logic.png)
 
 ## 公司私有 npm 仓库发布地址
 

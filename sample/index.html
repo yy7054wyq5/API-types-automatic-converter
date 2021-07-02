@@ -7,8 +7,8 @@
 		<title>sample</title>
 		<script>
 			function doSth(n, jsonServe) {
-				// let url = `http://localhost:5800/todos/${n}?a=1&b=2&c=1111`;
-				let url = `http://localhost:5800/todos/${n}`;
+				let url = `http://localhost:5800/todos/${n}?a=1&b=2&c=1111`;
+				// let url = `http://localhost:5800/todos/${n}`;
 				if (jsonServe) {
 					url = `https://jsonplaceholder.typicode.com/todos/${n}?a=1&b=2&c=1111`;
 				}
