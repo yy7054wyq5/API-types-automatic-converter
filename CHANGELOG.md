@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.8](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/compare/v0.4.7...v0.4.8) (2021-07-02)
+
+
+### Features
+
+* 类型检查工具从flow切换为ts ([d01909e](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/commit/d01909e742ede64904087f9010b581d33c1ca60f))
+* 启用mock,只需要给请求头添加mock-response即可 ([6a58aab](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/commit/6a58aab23572ae205e7ac133ef59456604e2002b))
+
+
+### Bug Fixes
+
+* tsc编译问题 ([3b9c79f](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/commit/3b9c79f8712dac153af3ab98a27e0ad85ab1eda1))
+
 ### [0.4.7](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/compare/v0.4.6...v0.4.7) (2021-06-29)
 
 
