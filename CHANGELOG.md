@@ -1,7 +1,8 @@
 # Changelog
 
-All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for
-commit guidelines.
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### [0.5.1](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/compare/v0.5.0...v0.5.1) (2021-07-02)
 
 ## [0.5.0](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/compare/v0.4.9...v0.5.0) (2021-07-02)
 
