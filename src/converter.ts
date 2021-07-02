@@ -10,12 +10,35 @@ function putInterfaceName(sourceStr: string, interfaceName: string): string {
 	return editedStr.replace(/interface RootObject/, `export interface ${interfaceName}`); // 重写接口
 }
 
+/**
+ * 1. 直接以数组返回的数据只会生成数组元素的类型而丢失了数组类型
+ * ```js
+ * const demo = [{ a: 1, b: '2' }];
+ * const result = json2Interface(demo, 'aaaaa');
+ * console.log(result); // ↓↓↓结果如下↓↓
+ * export interface aaaaa {
+ * 		a: number;
+ * 		b: string;
+ * }
+ * ```
+ */
+function patcher(content: string, typeName: string): string {
+	const tpl = (name: string) => {
+		return `export type ${name} = Array<${name}Item>;`;
+	};
+	const str = putInterfaceName(content, typeName + 'Item');
+	return tpl(typeName) + str;
+}
+
 function json2Interface(data: unknown, interfaceName: string): string {
 	if (!data) {
 		return '';
 	}
 	try {
 		const str = json2ts.default(data).toString().replace(/,/g, ' ');
+		if (Array.isArray(data)) {
+			return patcher(str, interfaceName);
+		}
 		return putInterfaceName(str, interfaceName);
 	} catch (error) {
 		logError('json2Interface.js json2Interface error');

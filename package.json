@@ -8,10 +8,9 @@
     "init": "npm run build && node ./dist/init.js",
     "start": "node ./dist/index.js -- start",
     "build": "tsc --build tsconfig.json",
-    "cli": "node ./dist/index.js start",
     "test": "echo \"Error: no test specified\" && exit 1",
     "version": "standard-version",
-    "git:log": "git log --author='wuyang' --grep='fix'  --all-match  --no-merges --since='2021-06-15 01:00:00' --until='2021-06-18 23:30:00' --pretty=format:' %s %ad ' --date=format:'%Y-%m-%d %H:%M:%S' > git-log.txt"
+    "git:log": "git log --author='wuyang' --grep='fix'  --all-match  --no-merges --since='2021-06-28 01:00:00' --until='2021-07-02 23:30:00' --pretty=format:' %s %ad ' --date=format:'%Y-%m-%d %H:%M:%S'   > git-log.txt"
   },
   "bin": {
     "api-convert-cli": "./dist/index.js"
@@ -57,6 +56,7 @@
     "eslint": "^7.29.0",
     "prettier": "^2.3.0",
     "standard-version": "^9.3.0",
+    "ts-node": "^10.0.0",
     "typescript": "^4.3.4"
   }
 }
