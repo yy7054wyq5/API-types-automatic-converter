@@ -11,8 +11,8 @@ module.exports = {
 	},
 	plugins: ['@typescript-eslint'],
 	rules: {
-		'no-explicit-any': 0,
-		'no-undef': 1,
+		'@typescript-eslint/no-explicit-any': 2,
+		'no-undef': 2,
 	},
 	globals: {
 		console: true,

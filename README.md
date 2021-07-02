@@ -3,11 +3,14 @@
 代理 API，自动将请求参数和返回数据转为 ts。使用返回数据自动创建 json、[json-schema](https://json-schema.org/)，当给请求头添加 mock-response 时，将会把保存的
 json 作为返回数据，进而实现 mock 的功能。开发此功能使用了[Typescript](https://www.typescriptlang.org/)作为静态检查工具。
 
+## 类型检查
+
+用 tsc 编译 ts 并会检查类型，使用的 tsconfig.json 的配置；eslint 用的是.eslintrc.js，只会检查代码结构和样式
+
 ## 原理
 
 1. 启动一个处于在前端和后端的中间服务器，通过反向代理让请求从该服务器过，从而劫持请求和响应做自动转换的功能。
-2. 支持自定义 differ() 来更新文件，因为接口大多会变化，所以 ts 需要更新；默认是强制更新文件，以最新的 ts 替换原来的，也可以设置为 append，则会把最新 ts 命名为
-   xxxLatest 的追加到后面；
+2. 支持自定义 differ() 来更新文件；默认是强制更新文件，以最新的 ts 替换原来的，也可以设置为 append，则会把最新 ts 命名为 xxxLatest 的追加到后面；
 3. 请求参数和返回数据都通过 differ() 的返回来决定是否更新，两者的参数略有不同。请求参数通过 differ() 判断时没有 schema 和 oldData
 
 ![原理](./api-converter.png)
@@ -16,7 +19,7 @@ json 作为返回数据，进而实现 mock 的功能。开发此功能使用了
 
 覆盖或追加，见配置的 updateStrategy
 
-![更新策略](./执行逻辑.png)
+![更新策略](./update-logic.png)
 
 ## 公司私有 npm 仓库发布地址
 
@@ -75,6 +78,8 @@ module.exports = {
 
 ## TODO
 
-    1. [x]分离函数，声明类型
-    2. [x]支持传入配置
-    3. []对接json-server
+1. [x]分离函数，声明类型
+2. [x]支持传入配置
+3. []fix:请求体或相应体为纯数组的，转换的类型对丢失外面这一层数组的类型，只有数组元素的类型
+4. []配置支持 ts
+5. []对接 json-server

@@ -1,9 +1,10 @@
 {
 	"compilerOptions": {
 		"allowSyntheticDefaultImports": true,
-		"noImplicitAny": false,
+		"esModuleInterop": false,
+		"noImplicitAny": true,
 		"noImplicitReturns": true,
-		"module": "Commonjs",
+		"module": "CommonJS",
 		"target": "es5",
 		"allowJs": true,
 		"outDir": "dist",

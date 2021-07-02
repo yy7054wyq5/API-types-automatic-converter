@@ -20,7 +20,7 @@ function differ(params) {
 module.exports = {
 	differ,
 	proxy: { target: 'https://jsonplaceholder.typicode.com', pathRewrite: { '^/api': '' }, changeOrigin: true, secure: false },
-	updateStrategy: 'cover',
+	updateStrategy: 'append',
 	port: 5800,
 	filePath: { json: './sample/assets/api-json', types: './sample/src/api-types' },
 	ignore: { urls: [], methods: ['delete', 'options'], reqContentTypes: [], resContentTypes: ['application/octet-stream'] },
