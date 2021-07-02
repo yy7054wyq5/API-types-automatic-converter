@@ -19,10 +19,10 @@ import { ApiTypeFileNameSuffix } from './suffix-of-file-name.config';
 import { differ } from './differ';
 const insideDiffer = differ;
 import type { DifferParams } from './differ';
-import { getReqParamsTypeContent, getResBodyTypeContent, Latest } from './API-content';
+import { getReqParamsTypeContent, getResBodyTypeContent } from './API-content';
 import anyBody = require('body/any');
 
-type Tag = 'request' | 'response' | 'mock' | 'invalidResponseBody';
+type Tag = 'request' | 'response' | 'mock';
 
 interface Config {
 	port: number;
