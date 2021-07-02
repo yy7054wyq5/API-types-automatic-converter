@@ -19,7 +19,7 @@ import { ApiTypeFileNameSuffix } from './suffix-of-file-name.config';
 import { differ } from './differ';
 const insideDiffer = differ;
 import type { DifferParams } from './differ';
-import { getReqParamsTypeContent, getResBodyTypeContent } from './API-content';
+import { getReqParamsTypeContent, getResBodyTypeContent, Latest } from './API-content';
 import anyBody = require('body/any');
 
 type Tag = 'request' | 'response' | 'mock' | 'invalidResponseBody';
@@ -98,7 +98,7 @@ function apiLog(data: express.Request | http.IncomingMessage, tag: Tag) {
 	console.log('content-type:', data.headers['content-type'] || '');
 }
 
-function ignoreProxy(req: express.Request, ignoreUrls: string[], ignoreMethods: string[]): boolean {
+function ignoreReqProxy(req: express.Request, ignoreUrls: string[], ignoreMethods: string[]): boolean {
 	const { url, method } = req;
 	for (const ignoreUrl of ignoreUrls) {
 		if (url.indexOf(ignoreUrl) > -1) {
@@ -106,6 +106,14 @@ function ignoreProxy(req: express.Request, ignoreUrls: string[], ignoreMethods: 
 		}
 	}
 	if (ignoreMethods.map((i) => i.toLowerCase()).includes(method.toLowerCase())) {
+		return true;
+	}
+	return false;
+}
+
+function ignoreResProxy(res: http.IncomingMessage): boolean {
+	const errorCodes = [StatusCodes.NOT_FOUND, StatusCodes.BAD_GATEWAY, StatusCodes.GATEWAY_TIMEOUT, StatusCodes.INTERNAL_SERVER_ERROR];
+	if (errorCodes.includes(res.statusCode)) {
 		return true;
 	}
 	return false;
@@ -170,7 +178,7 @@ program
 				return;
 			}
 
-			if (ignoreProxy(req, ignoreUrls, ignoreMethods)) {
+			if (ignoreReqProxy(req, ignoreUrls, ignoreMethods)) {
 				return;
 			}
 
@@ -225,7 +233,13 @@ program
 				return;
 			}
 
-			if (ignoreProxy(req, ignoreUrls, ignoreMethods)) {
+			const { url, method } = req;
+			if (!url || !method) {
+				logError('url或method无效');
+				return;
+			}
+
+			if (ignoreResProxy(proxyRes)) {
 				return;
 			}
 
@@ -233,12 +247,6 @@ program
 				// modify some information
 				// body.age = 2;
 				// delete body.version;
-
-				const { url, method } = req;
-				if (!url || !method) {
-					logError('url或method无效');
-					return body;
-				}
 
 				const { fileName, typeFileSavePathHead, interfacePrefixName } = step(req, typeFileSavePath);
 				const typeName = interfacePrefixName + 'ResbodyI';
@@ -263,15 +271,13 @@ program
 					return body;
 				}
 
-				if (!validateDataBeforeConvert(body)) {
-					apiLog(req, 'invalidResponseBody');
-					logError('请禁用浏览器缓存或检查该请求的响应body是否是对象格式，cli无法捕获正常的响应体，该请求的转换已终止');
-					return body;
-				}
-
 				// 将参数的保存置于此处，是为了保证日志按序输出
 				return triggerSaveReqParams().then(() => {
 					apiLog(proxyRes, 'response');
+					if (!validateDataBeforeConvert(body)) {
+						log('响应体无效', LogColors.blue);
+						return body;
+					}
 					const result = getResBodyTypeContent({
 						body,
 						typeFilePath,
@@ -294,12 +300,12 @@ program
 					}).then(() => {
 						// 保存data
 						saveJSON(jsonFilePath, JSON.stringify(body));
-						// 将interface转jsonschema
 						const schemaContent = ts2jsonschema({
 							fileName,
 							filePath: latestTypeContentFilePath || typeFilePath,
 							tsTypeName: typeName,
 						});
+						// 将interface转jsonschema
 						saveJSON(schemaFilePath, schemaContent).then(() => {
 							fs.unlinkSync(latestTypeContentFilePath);
 						});
