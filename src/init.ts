@@ -54,7 +54,8 @@ function create_ts_config_content(configContent: string): string {
 		import { DifferParams, APIConverterConfig } from 'api-types-automatic-converter';
 	`;
 	const copyTag = `// comments for copy, don't delete it`;
-	let differContent = fs.readFileSync('./src/differ.ts').toString();
+	const differ_ts_file_path = __dirname.replace('/dist', '/src/differ.ts');
+	let differContent = fs.readFileSync(differ_ts_file_path).toString();
 	differContent = differContent.split(copyTag)[1];
 	return `${importContent} ${differContent} module.exports = ${configContent} as APIConverterConfig;`;
 }

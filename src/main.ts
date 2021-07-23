@@ -52,6 +52,8 @@ function readConfig(): APIConverterConfig & { ts: boolean } {
 		return m;
 	};
 
+	const jsConfigFilePath = ConfigPath + '.js';
+
 	if (path.includes('.ts')) {
 		isTSFile = true;
 		try {
@@ -60,16 +62,15 @@ function readConfig(): APIConverterConfig & { ts: boolean } {
 			// 2. 项目的tsconfig.json和本身的tsconfig.json可能会不一样，也有可能报错
 			// 3. 放弃使用ts-node，也是为了不让使用者去多下载一个包
 			childProcess.execSync(`tsc ${path}`);
+			content = fs.readFileSync(jsConfigFilePath);
 		} catch (error) {
-			// 读取转换的文件
-			path = ConfigPath + '.js';
-			content = fs.readFileSync(ConfigPath + '.js');
+			content = fs.readFileSync(jsConfigFilePath);
 		}
 		// console.log(content.toString());
 	}
 	// console.log(path);
 	// console.log(content.toString());
-	const config = getModuleFromFile(content.toString(), path).exports as APIConverterConfig;
+	const config = getModuleFromFile(content.toString(), jsConfigFilePath).exports as APIConverterConfig;
 	return { ...config, ts: isTSFile };
 }
 
