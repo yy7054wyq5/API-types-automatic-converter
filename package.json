@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "client": "npx serve ./sample",
-    "init": "node ./dist/init.js",
+    "init": "node ./dist/main.js -- init",
     "start": "node ./dist/main.js -- start",
-    "build": "rm -rf ./dist && tsc --build tsconfig.json",
+    "build": "rm -rf ./dist && tsc --build tsconfig.json && tsc index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "version": "standard-version",
     "git:log": "git log --author='wuyang' --grep='fix'  --all-match  --no-merges --since='2021-06-28 01:00:00' --until='2021-07-02 23:30:00' --pretty=format:' %s %ad ' --date=format:'%Y-%m-%d %H:%M:%S'   > git-log.txt"

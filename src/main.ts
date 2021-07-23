@@ -23,9 +23,10 @@ import * as childProcess from 'child_process';
 
 type Tag = 'request' | 'response' | 'mock';
 
-function readConfig(): APIConverterConfig {
+function readConfig(): APIConverterConfig & { ts: boolean } {
 	const extensionNames = ['.ts', '.js'];
 	let content: Buffer | null = null;
+	let isTSFile = false;
 	let path = '';
 	for (const name of extensionNames) {
 		try {
@@ -52,10 +53,12 @@ function readConfig(): APIConverterConfig {
 	};
 
 	if (path.includes('.ts')) {
+		isTSFile = true;
 		try {
-			// 错误可能是找不到类型定义，没关系; 只要转出js即可
-			// 再加上调用该依赖时的根目录和本身tsconfig.json可能会不一样，也有可能报错
-			// 这里放弃使用ts-node，也是为了不让使用者去多下载一个包
+			// 强制转换不管报错的原因如下：
+			// 1. 目前的错误就是是找不到类型定义，没关系; 只要转出js即可
+			// 2. 项目的tsconfig.json和本身的tsconfig.json可能会不一样，也有可能报错
+			// 3. 放弃使用ts-node，也是为了不让使用者去多下载一个包
 			childProcess.execSync(`tsc ${path}`);
 		} catch (error) {
 			// 读取转换的文件
@@ -66,7 +69,8 @@ function readConfig(): APIConverterConfig {
 	}
 	// console.log(path);
 	// console.log(content.toString());
-	return getModuleFromFile(content.toString(), path).exports as APIConverterConfig;
+	const config = getModuleFromFile(content.toString(), path).exports as APIConverterConfig;
+	return { ...config, ts: isTSFile };
 }
 
 function step(
@@ -153,8 +157,11 @@ program
 	.command('start')
 	.description('转换服务启动')
 	.action(() => {
-		const { proxy, differ, ignore, port, filePath, updateStrategy } = readConfig();
-		fs.unlinkSync(ConfigPath + '.js');
+		const { proxy, differ, ignore, port, filePath, updateStrategy, ts } = readConfig();
+		// 是ts的配置文件，则删除被转换出来的js文件
+		if (ts) {
+			fs.unlinkSync(ConfigPath + '.js');
+		}
 		const _differ = differ || insideDiffer;
 
 		if (!proxy.target) {
@@ -288,7 +295,12 @@ program
 				return triggerSaveReqParams().then(() => {
 					apiLog(proxyRes, 'response');
 					if (!validateDataBeforeConvert(body)) {
-						log('响应体无效', LogColors.blue);
+						log('请求响应体无效或该请求已被缓存', LogColors.blue);
+						try {
+							console.log(JSON.stringify(body));
+						} catch (error) {
+							// nothing
+						}
 						return body;
 					}
 					const result = getResBodyTypeContent({
