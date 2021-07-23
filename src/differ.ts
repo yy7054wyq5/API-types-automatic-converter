@@ -8,6 +8,7 @@ export interface DifferParams {
 
 export type Differ = (params: DifferParams) => boolean;
 
+// comments for copy, don't delete it
 function differ(params: DifferParams): boolean {
 	// eslint-disable-next-line @typescript-eslint/no-var-requires
 	const Ajv = require('ajv');
@@ -24,5 +25,6 @@ function differ(params: DifferParams): boolean {
 
 	return true;
 }
+// comments for copy, don't delete it
 
 export { differ };

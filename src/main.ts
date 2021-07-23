@@ -9,8 +9,7 @@ import { program } from 'commander';
 import { StatusCodes } from 'http-status-codes';
 import modifyResponse = require('node-http-proxy-json');
 import { createProxyMiddleware, Options } from 'http-proxy-middleware';
-import { init, ConfigPath } from './init';
-import type { UpdateStrategy } from './init';
+import { init, ConfigPath, APIConverterConfig } from './init';
 import { saveJSON, saveType } from './save';
 import { ts2jsonschema } from './converter';
 import { log, LogColors, logSuccess, logError } from './log';
@@ -18,31 +17,27 @@ import { firstUpperCase, line2Hump, getQueryParamsFromUrl, mkdirs } from './util
 import { ApiTypeFileNameSuffix } from './suffix-of-file-name.config';
 import { differ } from './differ';
 const insideDiffer = differ;
-import type { DifferParams } from './differ';
 import { getReqParamsTypeContent, getResBodyTypeContent } from './API-content';
 import anyBody = require('body/any');
+import * as childProcess from 'child_process';
 
 type Tag = 'request' | 'response' | 'mock';
 
-interface Config {
-	port: number;
-	proxy: Options;
-	updateStrategy: UpdateStrategy;
-	differ: null | ((params: DifferParams) => boolean);
-	filePath: {
-		json: string;
-		types: string;
-	};
-	ignore: {
-		urls: Array<string>;
-		methods: Array<string>;
-		reqContentTypes: Array<string>;
-		resContentTypes: Array<string>;
-	};
-}
+function readConfig(): APIConverterConfig {
+	const extensionNames = ['.ts', '.js'];
+	let content: Buffer | null = null;
+	let path = '';
+	for (const name of extensionNames) {
+		try {
+			path = ConfigPath + name;
+			content = fs.readFileSync(path);
+		} catch (error) {
+			path = '';
+			content = null;
+		}
+		if (path && content) break;
+	}
 
-function readConfig(): Config {
-	const content = fs.readFileSync(ConfigPath);
 	const getModuleFromFile = (bundle: string, filename: string) => {
 		const m = { exports: {} };
 
@@ -55,7 +50,23 @@ function readConfig(): Config {
 		result.call(m.exports, m.exports, require, m); // 执行wrapper函数，此处传入require就解决了第一种方法不能require的问题
 		return m;
 	};
-	return getModuleFromFile(content.toString(), 'api-convert-config.js').exports as Config;
+
+	if (path.includes('.ts')) {
+		try {
+			// 错误可能是找不到类型定义，没关系; 只要转出js即可
+			// 再加上调用该依赖时的根目录和本身tsconfig.json可能会不一样，也有可能报错
+			// 这里放弃使用ts-node，也是为了不让使用者去多下载一个包
+			childProcess.execSync(`tsc ${path}`);
+		} catch (error) {
+			// 读取转换的文件
+			path = ConfigPath + '.js';
+			content = fs.readFileSync(ConfigPath + '.js');
+		}
+		// console.log(content.toString());
+	}
+	// console.log(path);
+	// console.log(content.toString());
+	return getModuleFromFile(content.toString(), path).exports as APIConverterConfig;
 }
 
 function step(
@@ -134,14 +145,16 @@ function validateDataBeforeConvert(body: unknown): boolean {
 
 program
 	.command('init')
+	.arguments('[configFileExtensionName]')
 	.description('初始化配置')
-	.action(() => init());
+	.action((configFileExtensionName) => init(configFileExtensionName));
 
 program
 	.command('start')
 	.description('转换服务启动')
 	.action(() => {
 		const { proxy, differ, ignore, port, filePath, updateStrategy } = readConfig();
+		fs.unlinkSync(ConfigPath + '.js');
 		const _differ = differ || insideDiffer;
 
 		if (!proxy.target) {

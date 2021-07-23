@@ -5,15 +5,15 @@
   "main": "index.js",
   "scripts": {
     "client": "npx serve ./sample",
-    "init": "npm run build && node ./dist/init.js",
-    "start": "node ./dist/index.js -- start",
-    "build": "tsc --build tsconfig.json",
+    "init": "node ./dist/init.js",
+    "start": "node ./dist/main.js -- start",
+    "build": "rm -rf ./dist && tsc --build tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 1",
     "version": "standard-version",
     "git:log": "git log --author='wuyang' --grep='fix'  --all-match  --no-merges --since='2021-06-28 01:00:00' --until='2021-07-02 23:30:00' --pretty=format:' %s %ad ' --date=format:'%Y-%m-%d %H:%M:%S'   > git-log.txt"
   },
   "bin": {
-    "api-convert-cli": "./dist/index.js"
+    "api-convert-cli": "./dist/main.js"
   },
   "license": "MIT",
   "repository": {
