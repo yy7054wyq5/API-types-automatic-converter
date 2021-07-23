@@ -16,5 +16,5 @@
 			"typescript-json-schema": ["node_modules/typescript-json-schema/dist"]
 		}
 	},
-	"include": ["./src"]
+	"include": ["./src", "node-http-proxy-json.d.ts"]
 }

@@ -1,3 +1,0 @@
-exports = {
-	...require('./dist/converter'),
-};
