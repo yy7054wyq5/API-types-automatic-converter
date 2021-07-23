@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.6.0](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/compare/v0.5.1...v0.6.0) (2021-07-23)
+
+
+### Features
+
+* 暴露index.ts供外部使用 ([c1163b1](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/commit/c1163b12503d376504e9598de6ef7e34fa8e5b75))
+* 支持ts配置文件 ([ab21a0d](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/commit/ab21a0dab7c77abd9f658db13d9dff991039cf0e))
+
 ### [0.5.1](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/compare/v0.5.0...v0.5.1) (2021-07-02)
 
 ## [0.5.0](http://gitlab.haochang.tv/web-frontend/API-types-automatic-converter/compare/v0.4.9...v0.5.0) (2021-07-02)
