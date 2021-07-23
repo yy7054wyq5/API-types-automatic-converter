@@ -1,7 +1,8 @@
 # API-types-automatic-converter
 
 代理 API，自动将请求参数和返回数据转为 ts。使用返回数据自动创建 json、[json-schema](https://json-schema.org/)，当给请求头添加 mock-response 时，将会把保存的
-json 作为返回数据，进而实现 mock 的功能。开发此功能使用了[Typescript](https://www.typescriptlang.org/)作为静态检查工具。
+json 作为返回数据，进而实现 mock 的功能。开发此功能使用了[Typescript](https://www.typescriptlang.org/)作为静态检查工具。用 esmodule 编码，但最终编译为 commonjs
+的模块。
 
 ## 类型检查
 
@@ -31,6 +32,11 @@ https://internal-nexus.haochang.tv/repository/npm/
 
 ## 开始使用
 
+| 命令                  | 说明         | 参数  | 说明                                                                     |
+| --------------------- | ------------ | ----- | ------------------------------------------------------------------------ |
+| api-convert-cli init  | 生成配置文件 | ts js | 可以这样使用：api-convert-cli init js ；不输参数默认是生成 ts 的配置文件 |
+| api-convert-cli start | 启动服务     | 无    |                                                                          |
+
 ```cmd
 npm -g i api-types-automatic-converter // 全局安装
 cd [project dir] // 进入项目目录
@@ -43,6 +49,8 @@ api-convert-cli start // 修改配置文件后启动，将在本地启动一个�
 
 \*\*配置中的 proxy 其实就是 [http-proxy-middleware](https://www.npmjs.com/package/http-proxy-middleware) 的配置，但 onProxyReq 和 onProxyRes 是无效的，该库就是
 通过它们来劫持的 API\*\*
+
+1. js 版
 
 ```js
 function differ(params) {
@@ -72,9 +80,40 @@ module.exports = {
 };
 ```
 
+2. ts 版
+
+```ts
+import { DifferParams, APIConverterConfig } from 'api-types-automatic-converter';
+
+function differ(params: DifferParams): boolean {
+	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	const Ajv = require('ajv');
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const { data, oldData, typeContent, oldTypeContent, schema } = params;
+	const ajv = new Ajv();
+	if (schema && data) {
+		const validate = ajv.compile(schema);
+		const valid = validate(data);
+		if (valid) {
+			return false;
+		}
+	}
+
+	return true;
+}
+module.exports = {
+	differ,
+	proxy: { target: 'https://jsonplaceholder.typicode.com', pathRewrite: { '^/api': '' }, changeOrigin: true, secure: false },
+	updateStrategy: 'cover',
+	port: 5800,
+	filePath: { json: './sample/assets/api-json', types: './sample/src/api-types' },
+	ignore: { urls: [], methods: ['delete', 'options'], reqContentTypes: [], resContentTypes: ['application/octet-stream'] },
+} as APIConverterConfig;
+```
+
 ## TODO
 
 1. [x]分离函数，声明类型
 2. [x]支持传入配置
-3. []配置支持 ts
+3. [x]配置支持 ts
 4. []对接 json-server

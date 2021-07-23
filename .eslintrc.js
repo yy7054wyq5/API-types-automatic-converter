@@ -16,5 +16,6 @@ module.exports = {
 	},
 	globals: {
 		console: true,
+		Buffer: true,
 	},
 };
