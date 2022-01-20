@@ -6,7 +6,8 @@
   "scripts": {
     "client": "npx serve ./sample",
     "init": "node ./dist/main.js -- init",
-    "start": "node ./dist/main.js -- start",
+    "start": "node ./dist/main.js -- start ./demo/api-convert-config.ts",
+    "ts-start": "ts-node ./src/main.ts -- start ./demo/api-convert-config.ts",
     "build": "rm -rf ./dist && tsc --build tsconfig.json && tsc index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "version": "standard-version",

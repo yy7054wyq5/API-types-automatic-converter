@@ -23,21 +23,25 @@ import * as childProcess from 'child_process';
 
 type Tag = 'request' | 'response' | 'mock';
 
-function readConfig(): APIConverterConfig & { ts: boolean } {
+function readConfig(path?: string): APIConverterConfig & { ts: boolean } {
 	const extensionNames = ['.ts', '.js'];
 	let content: Buffer | null = null;
 	let isTSFile = false;
-	let path = '';
-	for (const name of extensionNames) {
-		try {
-			path = ConfigPath + name;
-			content = fs.readFileSync(path);
-		} catch (error) {
-			path = '';
-			content = null;
+
+	if (!path) {
+		for (const name of extensionNames) {
+			try {
+				path = ConfigPath + name;
+				content = fs.readFileSync(path);
+			} catch (error) {
+				path = '';
+				content = null;
+			}
+			if (path && content) break;
 		}
-		if (path && content) break;
 	}
+
+	console.log(path);
 
 	const getModuleFromFile = (bundle: string, filename: string) => {
 		const m = { exports: {} };
@@ -52,7 +56,8 @@ function readConfig(): APIConverterConfig & { ts: boolean } {
 		return m;
 	};
 
-	const jsConfigFilePath = ConfigPath + '.js';
+	let jsConfigFilePath = ConfigPath + '.js';
+	console.log(jsConfigFilePath);
 
 	if (path.includes('.ts')) {
 		isTSFile = true;
@@ -156,9 +161,10 @@ program
 
 program
 	.command('start')
+	.arguments('[configPath]')
 	.description('转换服务启动')
-	.action(() => {
-		const { proxy, differ, ignore, port, filePath, updateStrategy, ts } = readConfig();
+	.action((configPath) => {
+		const { proxy, differ, ignore, port, filePath, updateStrategy, ts } = readConfig(configPath);
 		// 是ts的配置文件，则删除被转换出来的js文件
 		if (ts) {
 			fs.unlinkSync(ConfigPath + '.js');
@@ -357,4 +363,5 @@ program
 		app.listen(port);
 	});
 
-program.parse();
+// eslint-disable-next-line no-undef
+program.parse(process.argv);
