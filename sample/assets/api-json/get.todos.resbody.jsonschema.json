@@ -1,0 +1,12 @@
+{
+	"type": "object",
+	"properties": {
+		"userId": { "type": "number" },
+		"id": { "type": "number" },
+		"title": { "type": "string" },
+		"completed": { "type": "boolean" }
+	},
+	"required": ["completed", "id", "title", "userId"],
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "get.todos"
+}

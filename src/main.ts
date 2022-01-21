@@ -23,11 +23,35 @@ import * as childProcess from 'child_process';
 
 type Tag = 'request' | 'response' | 'mock';
 
-function readConfig(path?: string): APIConverterConfig & { ts: boolean } {
+const getModuleFromFile = (bundle: string, filename: string) => {
+	const m = { exports: {} };
+	const wrapper = nodeModule.wrap(bundle);
+	const script = new vm.Script(wrapper, {
+		filename,
+		displayErrors: true,
+	});
+	const result = script.runInThisContext(); // 此处可以指定代码的执行环境，此api在nodejs文档中有介绍
+	result.call(m.exports, m.exports, require, m); // 执行wrapper函数，此处传入require就解决了第一种方法不能require的问题
+	return m;
+};
+
+function customConfigFilePath(path: string): { path: string; folder: string } {
+	const lastPointIndex = path.lastIndexOf('.');
+	const lastSlashIndex = path.lastIndexOf('/');
+	const tmpPath = path.slice(0, lastPointIndex);
+	const tmpFolder = path.slice(0, lastSlashIndex);
+	return {
+		path: tmpPath,
+		folder: tmpFolder,
+	};
+}
+
+function readConfig(path?: string): APIConverterConfig & { ts: boolean; jsConfigFilePath: string; configFileFolder: string } {
 	const extensionNames = ['.ts', '.js'];
 	let content: Buffer | null = null;
 	let isTSFile = false;
 
+	// 没指定配置文件路径，读取默认路径的配置
 	if (!path) {
 		for (const name of extensionNames) {
 			try {
@@ -41,23 +65,9 @@ function readConfig(path?: string): APIConverterConfig & { ts: boolean } {
 		}
 	}
 
-	console.log(path);
-
-	const getModuleFromFile = (bundle: string, filename: string) => {
-		const m = { exports: {} };
-
-		const wrapper = nodeModule.wrap(bundle);
-		const script = new vm.Script(wrapper, {
-			filename,
-			displayErrors: true,
-		});
-		const result = script.runInThisContext(); // 此处可以指定代码的执行环境，此api在nodejs文档中有介绍
-		result.call(m.exports, m.exports, require, m); // 执行wrapper函数，此处传入require就解决了第一种方法不能require的问题
-		return m;
-	};
-
-	let jsConfigFilePath = ConfigPath + '.js';
-	console.log(jsConfigFilePath);
+	// console.log(path);
+	const jsConfigFilePath = (path ? customConfigFilePath(path).path : ConfigPath) + '.js';
+	// console.log(jsConfigFilePath);
 
 	if (path.includes('.ts')) {
 		isTSFile = true;
@@ -76,7 +86,7 @@ function readConfig(path?: string): APIConverterConfig & { ts: boolean } {
 	// console.log(path);
 	// console.log(content.toString());
 	const config = getModuleFromFile(content.toString(), jsConfigFilePath).exports as APIConverterConfig;
-	return { ...config, ts: isTSFile };
+	return { ...config, ts: isTSFile, jsConfigFilePath, configFileFolder: customConfigFilePath(path).folder };
 }
 
 function step(
@@ -164,10 +174,10 @@ program
 	.arguments('[configPath]')
 	.description('转换服务启动')
 	.action((configPath) => {
-		const { proxy, differ, ignore, port, filePath, updateStrategy, ts } = readConfig(configPath);
+		const { proxy, differ, ignore, port, filePath, updateStrategy, ts, jsConfigFilePath } = readConfig(configPath);
 		// 是ts的配置文件，则删除被转换出来的js文件
 		if (ts) {
-			fs.unlinkSync(ConfigPath + '.js');
+			fs.unlinkSync(jsConfigFilePath);
 		}
 		const _differ = differ || insideDiffer;
 
@@ -176,7 +186,12 @@ program
 			return;
 		}
 
-		const { methods: ignoreMethods, urls: ignoreUrls, reqContentTypes: ignoreReqContentTypes, resContentTypes: ignoreResContentTypes } = ignore;
+		const {
+			methods: ignoreMethods,
+			urls: ignoreUrls,
+			reqContentTypes: ignoreReqContentTypes,
+			resContentTypes: ignoreResContentTypes,
+		} = ignore;
 		const { typeFileSavePath, jsonFileSavePath } = mkdirs(filePath.types, filePath.json);
 
 		if (!typeFileSavePath || !jsonFileSavePath) {
@@ -339,7 +354,9 @@ program
 						});
 						// 将interface转jsonschema
 						saveJSON(schemaFilePath, schemaContent).then(() => {
-							fs.unlinkSync(latestTypeContentFilePath);
+							if (latestTypeContentFilePath) {
+								fs.unlinkSync(latestTypeContentFilePath);
+							}
 						});
 					});
 
@@ -355,7 +372,11 @@ program
 		};
 
 		const app: express.Application = express();
+		app.on('error', (error) => {
+			console.log(error);
+		});
 		const apiProxy = createProxyMiddleware(PROXY_CONFIG);
+
 		app.use(function (req, res, next) {
 			next();
 		});

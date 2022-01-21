@@ -20,7 +20,7 @@ module.exports = {
 	differ,
 	proxy: { target: 'https://jsonplaceholder.typicode.com', pathRewrite: { '^/api': '' }, changeOrigin: true, secure: false },
 	updateStrategy: 'cover',
-	port: 5800,
-	filePath: { json: './assets/api-json', types: './src/api-types' },
+	port: 5400,
+	filePath: { json: './demo/assets/api-json', types: './demo/src/api-types' },
 	ignore: { urls: [], methods: ['delete', 'options'], reqContentTypes: [], resContentTypes: ['application/octet-stream'] },
 } as APIConverterConfig;
