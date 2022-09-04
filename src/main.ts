@@ -106,7 +106,9 @@ function step(
 		api = api.split('?')[0];
 	}
 	// 过滤掉api上的非小写字母和短横线的部分
-	const apiArr = api.split('/').filter((word) => /^[a-z-]+$/g.test(word));
+	const apiArr = api.split('/').filter((word) => {
+		return /^[a-z-]+$/g.test(word.toLowerCase());
+	});
 	api = apiArr.join('-'); // 斜杠改为短横线
 	const fileName = `${method}.${api}`; // 拼接文件名
 	const typeFileSavePathHead = `${typeFileSavePath}/${fileName}`;
